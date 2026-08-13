@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Моя RPG Игра</title>
+    <!-- Подключаем скрипт Telegram, чтобы наше приложение могло общаться с мессенджером -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #1e1e2e; /* Тёмный фон, как в Telegram */
+            color: #cdd6f4;
+        }
+        .game-button {
+            background-color: #89b4fa;
+            border: none;
+            color: #1e1e2e;
+            padding: 15px 32px;
+            text-align: center;
+            font-size: 16px;
+            margin: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 200px;
+        }
+        .game-button:hover {
+            background-color: #b4befe;
+        }
+    </style>
+</head>
+<body>
+    <h1>Добро пожаловать в RPG!</h1>
+    <p id="infoText">Ты - отважный герой.</p>
+    <button class="game-button" onclick="attack()">⚔️ Атаковать</button>
+    <button class="game-button" onclick="rest()">💤 Отдохнуть</button>
+
+    <script>
+        // Инициализируем мини-приложение, чтобы Telegram знал, что оно загружено
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+
+        // Здесь будет логика игры
+        let health = 100;
+
+        function updateInfo() {
+            document.getElementById('infoText').innerText = `Здоровье: ${health}`;
+        }
+
+        function attack() {
+            const damage = Math.floor(Math.random() * 20) + 5;
+            health = Math.max(0, health - damage);
+            updateInfo();
+            // Отправляем сообщение боту (опционально)
+            // tg.sendData(JSON.stringify({ action: 'attack', health: health }));
+        }
+
+        function rest() {
+            health = Math.min(100, health + 15);
+            updateInfo();
+        }
+
+        // Обновляем информацию при загрузке
+        updateInfo();
+    </script>
+</body>
+</html>
