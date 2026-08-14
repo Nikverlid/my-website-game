@@ -486,6 +486,25 @@
         }
         .settings-panel .code-input button:active { transform: scale(0.95); }
 
+        /* Горячие клавиши */
+        .keybind-display {
+            background: #222;
+            padding: 4px 12px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            color: #fff;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            min-width: 30px;
+            text-align: center;
+            transition: 0.2s;
+        }
+        .keybind-display.active {
+            border-color: #f1c40f;
+            background: #333;
+        }
+
         @media (max-width: 600px) {
             .char-grid { grid-template-columns: 1fr; }
             .attack-buttons { grid-template-columns: 1fr 1fr; }
@@ -566,6 +585,30 @@
                             </div>
                         </div>
                         <div id="codeMessage" style="margin-top:8px; font-size:13px; color:#aaa;"></div>
+                        <!-- Горячие клавиши -->
+                        <div style="margin-top:16px; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;">
+                            <div style="font-weight:600; color:#f1c40f; margin-bottom:8px;">⌨️ Горячие клавиши</div>
+                            <div class="setting-row" data-action="attack1">
+                                <span class="setting-label">Атака 1</span>
+                                <span class="keybind-display" id="keybind-attack1">1</span>
+                            </div>
+                            <div class="setting-row" data-action="attack2">
+                                <span class="setting-label">Атака 2</span>
+                                <span class="keybind-display" id="keybind-attack2">2</span>
+                            </div>
+                            <div class="setting-row" data-action="attack3">
+                                <span class="setting-label">Атака 3</span>
+                                <span class="keybind-display" id="keybind-attack3">3</span>
+                            </div>
+                            <div class="setting-row" data-action="heal">
+                                <span class="setting-label">Лечение</span>
+                                <span class="keybind-display" id="keybind-heal">H</span>
+                            </div>
+                            <div class="setting-row" data-action="flee">
+                                <span class="setting-label">Побег</span>
+                                <span class="keybind-display" id="keybind-flee">F</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="center-panel">
@@ -681,7 +724,14 @@
             },
             inventory: [],
             gold: 0,
-            attackMode: 'physical'
+            attackMode: 'physical',
+            keyBindings: {
+                attack1: '1',
+                attack2: '2',
+                attack3: '3',
+                heal: 'h',
+                flee: 'f'
+            }
         };
 
         let enemy = null;
@@ -835,7 +885,6 @@
             const physCritChance = 5 + agility * 0.3 + luck * 0.2;
             const physCritMult = 150 + luck * 1;
             let maxHp = 20 + constitution * 3;
-            // Дополнительный бонус HP: +4 за каждые 2 очка телосложения
             maxHp += Math.floor(constitution / 2) * 4;
             const physDefense = 2 + Math.floor(constitution * 0.5);
             const physDodge = 5 + agility * 0.5;
@@ -866,21 +915,18 @@
             let critMult = phys.physCritMult;
             let dodge = phys.physDodge;
 
-            // Навыки
             const skillLevel = (id) => player.skills[id] || 0;
             attack += skillLevel('power_strike') * 2;
             defense += skillLevel('iron_skin') * 1;
             dodge += skillLevel('agility') * 2;
             critChance += skillLevel('precision') * 2;
 
-            // Заклинания
             const spellLevel = (id) => player.spells[id] || 0;
             magicAttack += spellLevel('fireball') * 3;
             magicDodge += spellLevel('ice_armor') * 2;
             magicCritChance += spellLevel('lightning') * 2;
             defense += spellLevel('shield') * 1;
 
-            // Снаряжение
             const eq = player.equipment;
             if (eq.weapon) {
                 attack += eq.weapon.attackBonus || 0;
@@ -898,7 +944,6 @@
                 magicAttack += eq.accessory.magicAttackBonus || 0;
             }
 
-            // Линейные бонусы от характеристик
             attack += Math.floor(player.strength / 2);
             magicAttack += Math.floor(player.intelligence / 2);
 
@@ -934,7 +979,8 @@
                         equipment: { weapon:null, armor:null, accessory:null },
                         inventory: [],
                         gold:0,
-                        attackMode: 'physical'
+                        attackMode: 'physical',
+                        keyBindings: { attack1:'1', attack2:'2', attack3:'3', heal:'h', flee:'f' }
                     };
                     for (let key in defaults) if (player[key]===undefined) player[key]=defaults[key];
                     if (player.equipment.weapon && typeof player.equipment.weapon === 'string') {
@@ -1053,6 +1099,7 @@
             toggle.textContent = player.attackMode === 'physical' ? 'Физический' : 'Магический';
             toggle.className = 'setting-toggle active';
             document.getElementById('codeMessage').textContent = '';
+            renderKeyBindings();
         }
 
         function updateStatPanel() {
@@ -1088,6 +1135,7 @@
                 toggle.textContent = player.attackMode === 'physical' ? 'Физический' : 'Магический';
                 toggle.className = 'setting-toggle active';
                 document.getElementById('codeMessage').textContent = '';
+                renderKeyBindings();
                 return;
             } else {
                 container.innerHTML = '';
@@ -1101,7 +1149,6 @@
         //  МОДАЛ ХАРАКТЕРИСТИК (ЗВЕЗДА) — С ПОДДЕРЖКОЙ ЗАЖАТИЯ
         // =====================================================================
 
-        // Вспомогательная функция обновления значений в звёзде без перерисовки
         function updateStatNodes() {
             const nodes = document.querySelectorAll('#hexagramBig .stat-node-big');
             nodes.forEach(node => {
@@ -1173,7 +1220,6 @@
                 container.appendChild(node);
             });
 
-            // ---- ОБРАБОТЧИКИ С ЗАЖАТИЕМ ----
             document.querySelectorAll('#hexagramBig .stat-plus').forEach(btn => {
                 let intervalId = null;
                 let isHeld = false;
@@ -1187,7 +1233,7 @@
                         saveGame();
                         updateMainUI();
                         updateCharWindow();
-                        updateStatNodes(); // обновляем значения без перерисовки
+                        updateStatNodes();
                         addLog(`⬆ ${statKey} увеличена до ${player[statKey]}`, 'info');
                     }
                 }
@@ -1479,6 +1525,107 @@
             updateMainUI();
             addLog(`🧪 Использовано ${item.name}, восстановлено ${heal} HP`, 'heal');
         }
+
+        // =====================================================================
+        //  ГОРЯЧИЕ КЛАВИШИ
+        // =====================================================================
+        function renderKeyBindings() {
+            const bindings = player.keyBindings;
+            document.getElementById('keybind-attack1').textContent = bindings.attack1 || '—';
+            document.getElementById('keybind-attack2').textContent = bindings.attack2 || '—';
+            document.getElementById('keybind-attack3').textContent = bindings.attack3 || '—';
+            document.getElementById('keybind-heal').textContent = bindings.heal || '—';
+            document.getElementById('keybind-flee').textContent = bindings.flee || '—';
+        }
+
+        let listeningForKey = null;
+
+        function startKeyBinding(action) {
+            listeningForKey = action;
+            const display = document.getElementById('keybind-' + action);
+            if (display) display.classList.add('active');
+        }
+
+        function finishKeyBinding(action, key) {
+            if (!key) return;
+            player.keyBindings[action] = key;
+            saveGame();
+            renderKeyBindings();
+            const display = document.getElementById('keybind-' + action);
+            if (display) display.classList.remove('active');
+            listeningForKey = null;
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (listeningForKey) {
+                e.preventDefault();
+                const key = e.key;
+                if (key.length === 1 || key === 'Escape') {
+                    if (key === 'Escape') {
+                        const display = document.getElementById('keybind-' + listeningForKey);
+                        if (display) display.classList.remove('active');
+                        listeningForKey = null;
+                        return;
+                    }
+                    finishKeyBinding(listeningForKey, key.toLowerCase());
+                }
+                return;
+            }
+
+            if (document.querySelector('.modal-overlay.active') || document.querySelector('.stats-modal-overlay.active') || document.querySelector('.inventory-modal.active')) {
+                return;
+            }
+
+            const bindings = player.keyBindings;
+            const key = e.key.toLowerCase();
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            let action = null;
+            for (let [act, k] of Object.entries(bindings)) {
+                if (k === key) {
+                    action = act;
+                    break;
+                }
+            }
+
+            if (!action) return;
+            e.preventDefault();
+
+            switch (action) {
+                case 'attack1':
+                case 'attack2':
+                case 'attack3':
+                    const btnMap = { 'attack1': 'btnAttack1', 'attack2': 'btnAttack2', 'attack3': 'btnAttack3' };
+                    const btn = document.getElementById(btnMap[action]);
+                    if (btn) btn.click();
+                    break;
+                case 'heal':
+                    document.getElementById('btnHeal').click();
+                    break;
+                case 'flee':
+                    document.getElementById('btnFlee').click();
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('.keybind-display');
+            if (!target) return;
+            const action = target.id.replace('keybind-', '');
+            if (listeningForKey) {
+                const oldDisplay = document.getElementById('keybind-' + listeningForKey);
+                if (oldDisplay) oldDisplay.classList.remove('active');
+                if (listeningForKey === action) {
+                    listeningForKey = null;
+                    return;
+                }
+            }
+            startKeyBinding(action);
+        });
                 // =====================================================================
         //  БОЕВАЯ СИСТЕМА
         // =====================================================================
@@ -1755,7 +1902,8 @@
                     equipment: { weapon: null, armor: null, accessory: null },
                     inventory: [],
                     gold: 0,
-                    attackMode: 'physical'
+                    attackMode: 'physical',
+                    keyBindings: { attack1:'1', attack2:'2', attack3:'3', heal:'h', flee:'f' }
                 };
                 enemy = null;
                 recalcStats();
