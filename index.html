@@ -6,46 +6,142 @@
     <title>War of the Virtuosos</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* ===== Все стили как в предыдущей версии ===== */
+        /* ===== БАЗОВЫЕ СТИЛИ (как раньше, но с дополнениями) ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: linear-gradient(145deg, #0b0b1a, #1a1a2e); color: #eee; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px; }
         .game-container { max-width: 480px; width: 100%; background: rgba(255,255,255,0.04); backdrop-filter: blur(8px); border-radius: 36px; padding: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.06); }
         h1 { text-align: center; font-weight: 700; font-size: 22px; letter-spacing: 1px; background: linear-gradient(135deg, #f7971e, #ffd200); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 12px; }
-        .top-status { display: flex; justify-content: space-between; background: rgba(0,0,0,0.3); border-radius: 16px; padding: 10px 14px; margin-bottom: 12px; font-size: 14px; }
-        .top-status span { color: #aaa; }
-        .top-status .value { color: #fff; font-weight: 600; }
-        .log-area { background: rgba(0,0,0,0.4); border-radius: 16px; padding: 10px 14px; min-height: 70px; margin-bottom: 12px; font-size: 14px; line-height: 1.5; color: #ccc; max-height: 110px; overflow-y: auto; }
-        .log-entry { margin-bottom: 3px; }
-        .log-entry.damage { color: #e74c3c; }
-        .log-entry.heal { color: #2ecc71; }
-        .log-entry.info { color: #85c1e9; }
-        .log-entry.loot { color: #f1c40f; }
-        .button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-        .btn { padding: 12px 0; border: none; border-radius: 16px; font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.2s; background: rgba(255,255,255,0.08); color: #fff; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
-        .btn:active { transform: scale(0.96); }
-        .btn-attack { background: #e74c3c; }
-        .btn-attack:active { background: #c0392b; }
-        .btn-heal { background: #2ecc71; }
-        .btn-heal:active { background: #27ae60; }
-        .btn-flee { background: #95a5a6; }
-        .btn-flee:active { background: #7f8c8d; }
-        .btn-char { background: #8e44ad; grid-column: span 2; }
-        .btn-char:active { background: #6c3483; }
-        .btn-reset { background: #e67e22; grid-column: span 2; }
-        .btn-reset:active { background: #d35400; }
 
-        .attack-choice {
-            display: none;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+        /* ===== БОЕВОЙ ИНТЕРФЕЙС ===== */
+        .battle-panel {
+            background: rgba(0,0,0,0.4);
+            border-radius: 20px;
+            padding: 12px;
             margin-bottom: 12px;
         }
-        .attack-choice.active { display: grid; }
+        .battle-panel .hp-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .battle-panel .hp-bar-bg {
+            background: #333;
+            height: 10px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .battle-panel .hp-bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s;
+        }
+        .hp-bar-fill.enemy { background: linear-gradient(90deg, #e74c3c, #c0392b); }
+        .hp-bar-fill.player { background: linear-gradient(90deg, #2ecc71, #27ae60); }
+
+        .battle-panel .enemy-name {
+            font-weight: 700;
+            color: #f1c40f;
+        }
+
+        /* ===== КНОПКИ АТАК ===== */
+        .attack-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .attack-buttons .btn {
+            padding: 10px 0;
+            font-size: 13px;
+        }
         .btn-attack-phys { background: #e67e22; }
         .btn-attack-phys:active { background: #d35400; }
-        .btn-attack-magic { background: #8e44ad; }
-        .btn-attack-magic:active { background: #6c3483; }
+        .btn-attack-heavy { background: #c0392b; }
+        .btn-attack-heavy:active { background: #922b21; }
+        .btn-attack-defend { background: #2980b9; }
+        .btn-attack-defend:active { background: #1f618d; }
+        .btn-attack-magic-fire { background: #e67e22; }
+        .btn-attack-magic-fire:active { background: #d35400; }
+        .btn-attack-magic-ice { background: #3498db; }
+        .btn-attack-magic-ice:active { background: #2e86c1; }
+        .btn-attack-magic-lightning { background: #f1c40f; color: #000; }
+        .btn-attack-magic-lightning:active { background: #f39c12; }
 
+        .action-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .action-row .btn { flex: 1; }
+
+        /* ===== ИНВЕНТАРЬ ===== */
+        .inventory-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .inventory-modal.active { display: flex; }
+        .inventory-modal .modal {
+            background: #1e1e32;
+            border-radius: 32px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 24px;
+            border: 1px solid rgba(255,215,0,0.2);
+        }
+        .inventory-modal .modal h2 { color: #f1c40f; text-align: center; margin-bottom: 16px; }
+        .inventory-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin-bottom: 6px;
+            border-left: 4px solid #888;
+        }
+        .inventory-item .item-name { font-weight: 600; }
+        .inventory-item .item-stats { font-size: 12px; color: #aaa; }
+        .inventory-item .item-rarity-common { border-color: #aaa; }
+        .inventory-item .item-rarity-rare { border-color: #3498db; }
+        .inventory-item .item-rarity-epic { border-color: #9b59b6; }
+        .inventory-item .item-rarity-legendary { border-color: #f1c40f; }
+        .inventory-item .btn-use { background: #2ecc71; border: none; border-radius: 8px; padding: 4px 12px; color: #fff; font-weight: 600; cursor: pointer; }
+        .inventory-item .btn-use:active { transform: scale(0.95); }
+        .inventory-item .btn-use.equipped { background: #e67e22; }
+
+        .equipped-slots {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .equipped-slots .slot {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 8px;
+            text-align: center;
+            font-size: 12px;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .equipped-slots .slot .slot-label { color: #aaa; font-size: 11px; }
+        .equipped-slots .slot .slot-item { font-weight: 600; color: #f1c40f; font-size: 13px; }
+
+        /* ===== МОДАЛЬНЫЕ ОКНА ===== (старые стили сохранены) ===== */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
         .modal-overlay.active { display: flex; }
         .modal { background: linear-gradient(145deg, #1e1e32, #12121f); border-radius: 36px; max-width: 750px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 24px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 30px 60px rgba(0,0,0,0.9); position: relative; }
@@ -101,39 +197,115 @@
         .skill-node:hover .skill-tooltip { display: block; }
         .skill-points-display { display: flex; justify-content: space-between; font-size: 14px; color: #aaa; margin-bottom: 8px; padding: 0 4px; }
         .skill-points-display span { color: #f1c40f; font-weight: 700; }
-        @media (max-width: 600px) { .char-grid { grid-template-columns: 1fr; gap: 12px; } .stat-node-big { font-size: 12px; padding: 6px 8px; min-width: 60px; } .stat-node-big .stat-val { font-size: 16px; } .stat-node-big .stat-plus { width: 24px; height: 24px; font-size: 16px; } .skill-circle { width: 60px; height: 60px; font-size: 24px; } .skill-node { width: 70px; } }
+        .btn { padding: 12px 0; border: none; border-radius: 16px; font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.2s; background: rgba(255,255,255,0.08); color: #fff; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
+        .btn:active { transform: scale(0.96); }
+        .btn-heal { background: #2ecc71; }
+        .btn-heal:active { background: #27ae60; }
+        .btn-flee { background: #95a5a6; }
+        .btn-flee:active { background: #7f8c8d; }
+        .btn-char { background: #8e44ad; }
+        .btn-char:active { background: #6c3483; }
+        .btn-reset { background: #e67e22; }
+        .btn-reset:active { background: #d35400; }
+        .btn-inventory { background: #f39c12; }
+        .btn-inventory:active { background: #d68910; }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .button-grid .btn { grid-column: span 1; }
+        .button-grid .btn-full { grid-column: span 2; }
+
+        .log-area {
+            background: rgba(0,0,0,0.4);
+            border-radius: 16px;
+            padding: 10px 14px;
+            min-height: 70px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #ccc;
+            max-height: 110px;
+            overflow-y: auto;
+        }
+        .log-entry { margin-bottom: 3px; }
+        .log-entry.damage { color: #e74c3c; }
+        .log-entry.heal { color: #2ecc71; }
+        .log-entry.info { color: #85c1e9; }
+        .log-entry.loot { color: #f1c40f; }
+        .log-entry.drop { color: #9b59b6; }
+
+        @media (max-width: 600px) {
+            .char-grid { grid-template-columns: 1fr; }
+            .attack-buttons { grid-template-columns: 1fr 1fr; }
+            .equipped-slots { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
-    <!-- ОСНОВНОЙ ЭКРАН -->
+
+    <!-- ===== ОСНОВНОЙ ЭКРАН ===== -->
     <div class="game-container" id="gameContainer">
         <h1>⚔️ War of Virtuosos</h1>
-        <div class="top-status">
-            <span>👤 <span class="value" id="playerNameTop">Герой</span></span>
-            <span>🏅 <span class="value" id="playerLevelTop">1</span></span>
-            <span>❤️ <span class="value" id="playerHpTop">20/20</span></span>
+        <!-- Боевая панель -->
+        <div class="battle-panel" id="battlePanel">
+            <div class="hp-row">
+                <span class="enemy-name" id="enemyName">Враг: ---</span>
+                <span id="enemyHpText">---</span>
+            </div>
+            <div class="hp-bar-bg">
+                <div class="hp-bar-fill enemy" id="enemyHpFill" style="width:0%"></div>
+            </div>
+            <div class="hp-row" style="margin-top:4px;">
+                <span>👤 <span id="playerNameBattle">Герой</span></span>
+                <span id="playerHpBattle">20/20</span>
+            </div>
+            <div class="hp-bar-bg">
+                <div class="hp-bar-fill player" id="playerHpFillBattle" style="width:100%"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px; color:#aaa;">
+                <span>⚔️ <span id="weaponDisplay">Руки</span></span>
+                <span>🛡️ <span id="armorDisplay">Нет</span></span>
+            </div>
         </div>
+
         <div class="log-area" id="logArea">
             <div class="log-entry info">Добро пожаловать в RPG!</div>
             <div class="log-entry info">Используйте кнопки внизу.</div>
         </div>
 
-        <!-- Кнопки выбора атаки -->
-        <div class="attack-choice" id="attackChoice">
-            <button class="btn btn-attack-phys" id="btnPhysAttack">⚔️ Физ. атака</button>
-            <button class="btn btn-attack-magic" id="btnMagicAttack">🧙 Маг. атака</button>
+        <!-- Кнопки атак (физика, магия) -->
+        <div id="attackContainer">
+            <!-- Физические атаки -->
+            <div class="attack-buttons" id="physAttackButtons">
+                <button class="btn btn-attack-phys" id="btnPhysAttack">⚔️ Удар</button>
+                <button class="btn btn-attack-heavy" id="btnHeavyAttack">💥 Тяжёлый</button>
+                <button class="btn btn-attack-defend" id="btnDefend">🛡️ Защита</button>
+            </div>
+            <!-- Магические атаки -->
+            <div class="attack-buttons" id="magicAttackButtons" style="display:none;">
+                <button class="btn btn-attack-magic-fire" id="btnFireball">🔥 Огненный шар</button>
+                <button class="btn btn-attack-magic-ice" id="btnIceArmor">❄️ Ледяная броня</button>
+                <button class="btn btn-attack-magic-lightning" id="btnLightning">⚡ Молния</button>
+            </div>
+            <div class="action-row">
+                <button class="btn btn-heal" id="btnHeal">💚 Лечиться</button>
+                <button class="btn btn-flee" id="btnFlee">🏃 Сбежать</button>
+            </div>
         </div>
 
-        <div class="button-grid" id="mainButtons">
-            <button class="btn btn-attack" id="btnFight">⚔️ Сражаться</button>
-            <button class="btn btn-heal" id="btnHeal">💚 Лечиться</button>
-            <button class="btn btn-flee" id="btnFlee">🏃 Сбежать</button>
+        <!-- Основные кнопки -->
+        <div class="button-grid">
             <button class="btn btn-char" id="btnOpenChar">👤 Персонаж</button>
-            <button class="btn btn-reset" id="btnReset">🔄 Новая игра</button>
+            <button class="btn btn-inventory" id="btnInventory">🎒 Инвентарь</button>
+            <button class="btn btn-reset btn-full" id="btnReset">🔄 Новая игра</button>
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ПЕРСОНАЖА -->
+    <!-- ===== МОДАЛЬНОЕ ОКНО ПЕРСОНАЖА (старое, без изменений) ===== -->
     <div class="modal-overlay" id="charModal">
         <div class="modal">
             <button class="modal-close" id="closeCharModal">✕</button>
@@ -179,7 +351,7 @@
                     </div>
                 </div>
             </div>
-            <!-- НАВЫКИ И ЗАКЛИНАНИЯ -->
+            <!-- Навыки/заклинания -->
             <div class="skills-spells-section">
                 <div class="tabs" id="skillsSpellsTabs">
                     <button class="tab-btn active" data-tab="skills">⚔️ Навыки</button>
@@ -194,13 +366,27 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ХАРАКТЕРИСТИК -->
+    <!-- ===== МОДАЛЬНОЕ ОКНО ХАРАКТЕРИСТИК (старое) ===== -->
     <div class="stats-modal-overlay" id="statsModal">
         <div class="stats-modal">
             <button class="stats-modal-close" id="closeStatsModal">✕</button>
             <h2>✦ Характеристики ✦</h2>
             <div class="hexagram-big" id="hexagramBig"></div>
             <div class="stat-points-big">Очки характеристик: <span id="statPointsBig">0</span></div>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛЬНОЕ ОКНО ИНВЕНТАРЯ ===== -->
+    <div class="inventory-modal" id="inventoryModal">
+        <div class="modal">
+            <button class="modal-close" id="closeInventoryModal">✕</button>
+            <h2>🎒 Инвентарь</h2>
+            <div class="equipped-slots">
+                <div class="slot"><span class="slot-label">⚔️ Оружие</span><span class="slot-item" id="equippedWeapon">Нет</span></div>
+                <div class="slot"><span class="slot-label">🛡️ Броня</span><span class="slot-item" id="equippedArmor">Нет</span></div>
+                <div class="slot"><span class="slot-label">💍 Аксессуар</span><span class="slot-item" id="equippedAccessory">Нет</span></div>
+            </div>
+            <div id="inventoryList"></div>
         </div>
     </div>
 
@@ -212,7 +398,7 @@
         tg.ready();
 
         // =====================================================================
-        //  ИГРОВОЕ СОСТОЯНИЕ
+        //  ИГРОВОЕ СОСТОЯНИЕ (расширенное)
         // =====================================================================
         let player = {
             name: "Герой",
@@ -239,13 +425,96 @@
             skillPoints: 0,
             spellPoints: 0,
             skills: {},
-            spells: {}
+            spells: {},
+            // Снаряжение
+            equipment: {
+                weapon: null,    // объект предмета
+                armor: null,
+                accessory: null
+            },
+            inventory: [],       // массив предметов
+            gold: 0
         };
+
         let enemy = null;
-        let isChoosingAttack = false;
+        let isDefending = false; // флаг защиты
 
         // =====================================================================
-        //  ФУНКЦИИ РАСЧЁТА
+        //  СИСТЕМА ПРЕДМЕТОВ
+        // =====================================================================
+        const itemTemplates = {
+            // Оружие
+            'Iron Sword': { type: 'weapon', name: 'Железный меч', attackBonus: 4, defenseBonus: 0, rarity: 'common', emoji: '⚔️' },
+            'Steel Blade': { type: 'weapon', name: 'Стальной клинок', attackBonus: 8, defenseBonus: 1, rarity: 'rare', emoji: '🗡️' },
+            'Crystal Sword': { type: 'weapon', name: 'Хрустальный меч', attackBonus: 12, critBonus: 5, rarity: 'epic', emoji: '🔮' },
+            'Dragon Slayer': { type: 'weapon', name: 'Драконоборец', attackBonus: 20, critBonus: 10, rarity: 'legendary', emoji: '🐉' },
+            // Броня
+            'Leather Armor': { type: 'armor', name: 'Кожаная броня', defenseBonus: 3, rarity: 'common', emoji: '🛡️' },
+            'Chain Mail': { type: 'armor', name: 'Кольчуга', defenseBonus: 6, rarity: 'rare', emoji: '⛓️' },
+            'Plate Armor': { type: 'armor', name: 'Латный доспех', defenseBonus: 10, hpBonus: 10, rarity: 'epic', emoji: '🛡️' },
+            'Mithril Armor': { type: 'armor', name: 'Мифриловая броня', defenseBonus: 15, hpBonus: 20, rarity: 'legendary', emoji: '✨' },
+            // Аксессуары
+            'Ring of Strength': { type: 'accessory', name: 'Кольцо силы', attackBonus: 3, rarity: 'common', emoji: '💍' },
+            'Amulet of Protection': { type: 'accessory', name: 'Амулет защиты', defenseBonus: 3, rarity: 'rare', emoji: '📿' },
+            'Crystal Amulet': { type: 'accessory', name: 'Хрустальный амулет', attackBonus: 5, defenseBonus: 5, rarity: 'epic', emoji: '💎' },
+            'Phoenix Feather': { type: 'accessory', name: 'Перо Феникса', hpBonus: 15, rarity: 'legendary', emoji: '🔥' },
+            // Зелья
+            'Health Potion': { type: 'potion', name: 'Зелье здоровья', healAmount: 15, rarity: 'common', emoji: '🧪' },
+            'Greater Potion': { type: 'potion', name: 'Большое зелье', healAmount: 35, rarity: 'rare', emoji: '🧪' },
+        };
+
+        // Функция создания предмета по ID
+        function createItem(id) {
+            const template = itemTemplates[id];
+            if (!template) return null;
+            return {
+                id: id,
+                type: template.type,
+                name: template.name,
+                attackBonus: template.attackBonus || 0,
+                defenseBonus: template.defenseBonus || 0,
+                hpBonus: template.hpBonus || 0,
+                critBonus: template.critBonus || 0,
+                healAmount: template.healAmount || 0,
+                rarity: template.rarity || 'common',
+                emoji: template.emoji || '📦'
+            };
+        }
+
+        // Функция для генерации случайного дропа (вызывается после победы)
+        function generateDrop() {
+            // Шанс дропа 60%
+            if (Math.random() > 0.6) return null;
+
+            // Определяем пул предметов в зависимости от уровня врага (пока простой)
+            const pool = [
+                'Iron Sword', 'Leather Armor', 'Ring of Strength', 'Health Potion',
+                'Steel Blade', 'Chain Mail', 'Amulet of Protection', 'Greater Potion',
+                'Crystal Sword', 'Plate Armor', 'Crystal Amulet',
+                'Dragon Slayer', 'Mithril Armor', 'Phoenix Feather'
+            ];
+            // Вес предметов (чем реже, тем меньше шанс)
+            const weights = {
+                'Iron Sword': 20, 'Leather Armor': 20, 'Ring of Strength': 20, 'Health Potion': 30,
+                'Steel Blade': 15, 'Chain Mail': 15, 'Amulet of Protection': 15, 'Greater Potion': 20,
+                'Crystal Sword': 8, 'Plate Armor': 8, 'Crystal Amulet': 8,
+                'Dragon Slayer': 3, 'Mithril Armor': 3, 'Phoenix Feather': 3
+            };
+            // Выбор с учётом веса
+            let totalWeight = 0;
+            for (let id of pool) totalWeight += (weights[id] || 10);
+            let rand = Math.random() * totalWeight;
+            for (let id of pool) {
+                rand -= (weights[id] || 10);
+                if (rand <= 0) {
+                    return createItem(id);
+                }
+            }
+            return createItem(pool[0]);
+        }
+
+        // =====================================================================
+        //  ФУНКЦИИ РАСЧЁТА (обновлены с учётом снаряжения)
         // =====================================================================
         function getXpToNext(level) {
             if (level >= 100) return Infinity;
@@ -349,19 +618,35 @@
             let critMult = phys.physCritMult;
             let dodge = phys.physDodge;
 
-            // Бонусы от навыков
+            // Навыки
             const skillLevel = (id) => player.skills[id] || 0;
             attack += skillLevel('power_strike') * 2;
             defense += skillLevel('iron_skin') * 1;
             dodge += skillLevel('agility') * 2;
             critChance += skillLevel('precision') * 2;
 
-            // Бонусы от заклинаний
+            // Заклинания
             const spellLevel = (id) => player.spells[id] || 0;
             magicAttack += spellLevel('fireball') * 3;
             magicDodge += spellLevel('ice_armor') * 2;
             magicCritChance += spellLevel('lightning') * 2;
             defense += spellLevel('shield') * 1;
+
+            // Снаряжение
+            const eq = player.equipment;
+            if (eq.weapon) {
+                attack += eq.weapon.attackBonus || 0;
+                critChance += eq.weapon.critBonus || 0;
+            }
+            if (eq.armor) {
+                defense += eq.armor.defenseBonus || 0;
+                maxHp += eq.armor.hpBonus || 0;
+            }
+            if (eq.accessory) {
+                attack += eq.accessory.attackBonus || 0;
+                defense += eq.accessory.defenseBonus || 0;
+                maxHp += eq.accessory.hpBonus || 0;
+            }
 
             player.attack = attack;
             player.defense = defense;
@@ -376,11 +661,12 @@
         }
 
         // =====================================================================
-        //  СОХРАНЕНИЕ / ЗАГРУЗКА
+        //  СОХРАНЕНИЕ / ЗАГРУЗКА (расширенное)
         // =====================================================================
         function saveGame() {
             try { localStorage.setItem('rpg_save', JSON.stringify(player)); } catch(e) {}
         }
+
         function loadGame() {
             try {
                 const data = localStorage.getItem('rpg_save');
@@ -390,12 +676,36 @@
                     const defaults = {
                         intelligence:1, wisdom:1, strength:1, agility:1, constitution:1, luck:1,
                         statPoints:0, skillPoints:0, spellPoints:0,
-                        skills:{}, spells:{}
+                        skills:{}, spells:{},
+                        equipment: { weapon:null, armor:null, accessory:null },
+                        inventory: [],
+                        gold:0
                     };
                     for (let key in defaults) if (player[key]===undefined) player[key]=defaults[key];
+                    // Восстановление объектов предметов из ID
+                    if (player.equipment.weapon && typeof player.equipment.weapon === 'string') {
+                        player.equipment.weapon = createItem(player.equipment.weapon);
+                    }
+                    if (player.equipment.armor && typeof player.equipment.armor === 'string') {
+                        player.equipment.armor = createItem(player.equipment.armor);
+                    }
+                    if (player.equipment.accessory && typeof player.equipment.accessory === 'string') {
+                        player.equipment.accessory = createItem(player.equipment.accessory);
+                    }
+                    // Восстановление инвентаря
+                    if (Array.isArray(player.inventory)) {
+                        player.inventory = player.inventory.map(item => {
+                            if (typeof item === 'string') return createItem(item);
+                            return item;
+                        }).filter(i => i !== null);
+                    } else {
+                        player.inventory = [];
+                    }
                     recalcStats();
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.warn('Ошибка загрузки:', e);
+            }
             if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 player.name = tg.initDataUnsafe.user.first_name || player.name;
             }
@@ -408,6 +718,28 @@
             document.getElementById('playerNameTop').textContent = player.name;
             document.getElementById('playerLevelTop').textContent = player.level;
             document.getElementById('playerHpTop').textContent = `${player.hp}/${player.maxHp}`;
+            // Боевая панель
+            document.getElementById('playerNameBattle').textContent = player.name;
+            document.getElementById('playerHpBattle').textContent = `${player.hp}/${player.maxHp}`;
+            const hpPercent = Math.max(0, (player.hp / player.maxHp) * 100);
+            document.getElementById('playerHpFillBattle').style.width = hpPercent + '%';
+
+            // Оружие и броня
+            const weaponName = player.equipment.weapon ? player.equipment.weapon.name : 'Руки';
+            const armorName = player.equipment.armor ? player.equipment.armor.name : 'Нет';
+            document.getElementById('weaponDisplay').textContent = weaponName;
+            document.getElementById('armorDisplay').textContent = armorName;
+
+            if (enemy) {
+                document.getElementById('enemyName').textContent = `Враг: ${enemy.name}`;
+                document.getElementById('enemyHpText').textContent = `${enemy.hp}/${enemy.maxHp}`;
+                const ePercent = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+                document.getElementById('enemyHpFill').style.width = ePercent + '%';
+            } else {
+                document.getElementById('enemyName').textContent = 'Враг: ---';
+                document.getElementById('enemyHpText').textContent = '---';
+                document.getElementById('enemyHpFill').style.width = '0%';
+            }
         }
 
         function addLog(message, type='info') {
@@ -421,7 +753,7 @@
         }
 
         // =====================================================================
-        //  ОКНО ПЕРСОНАЖА – СТАТИСТИКА
+        //  ОКНО ПЕРСОНАЖА (старое, но с обновлением статов)
         // =====================================================================
         function updateCharWindow() {
             const level = player.level;
@@ -551,7 +883,7 @@
         }
 
         // =====================================================================
-        //  НАВЫКИ И ЗАКЛИНАНИЯ
+        //  НАВЫКИ И ЗАКЛИНАНИЯ (без изменений)
         // =====================================================================
         const skillsData = [
             { id: 'power_strike', name: 'Силовой удар', icon: '💪', desc: '+2 к физ. атаке за уровень' },
@@ -606,7 +938,7 @@
                         storage[id] = (storage[id] || 0) + 1;
                         if (tab === 'skills') player.skillPoints--;
                         else player.spellPoints--;
-                        recalcStats(); // ← пересчёт после изменения навыка
+                        recalcStats();
                         saveGame();
                         updateCharWindow();
                         addLog(`⬆ ${tab === 'skills' ? 'Навык' : 'Заклинание'} ${id} повышен до ${storage[id]}`, 'info');
@@ -629,106 +961,309 @@
         });
 
         // =====================================================================
-        //  БОЕВАЯ МЕХАНИКА
+        //  ИНВЕНТАРЬ
+        // =====================================================================
+        function openInventory() {
+            document.getElementById('inventoryModal').classList.add('active');
+            renderInventory();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeInventory() {
+            document.getElementById('inventoryModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function renderInventory() {
+            // Отображаем экипировку
+            document.getElementById('equippedWeapon').textContent = player.equipment.weapon ? player.equipment.weapon.name : 'Нет';
+            document.getElementById('equippedArmor').textContent = player.equipment.armor ? player.equipment.armor.name : 'Нет';
+            document.getElementById('equippedAccessory').textContent = player.equipment.accessory ? player.equipment.accessory.name : 'Нет';
+
+            const list = document.getElementById('inventoryList');
+            if (player.inventory.length === 0) {
+                list.innerHTML = '<div style="text-align:center;color:#aaa;">Инвентарь пуст</div>';
+                return;
+            }
+
+            let html = '';
+            player.inventory.forEach((item, index) => {
+                const rarityClass = 'item-rarity-' + item.rarity;
+                const isEquipped = (player.equipment.weapon && player.equipment.weapon.id === item.id) ||
+                                   (player.equipment.armor && player.equipment.armor.id === item.id) ||
+                                   (player.equipment.accessory && player.equipment.accessory.id === item.id);
+                let statsText = [];
+                if (item.attackBonus) statsText.push(`⚔️+${item.attackBonus}`);
+                if (item.defenseBonus) statsText.push(`🛡️+${item.defenseBonus}`);
+                if (item.hpBonus) statsText.push(`❤️+${item.hpBonus}`);
+                if (item.critBonus) statsText.push(`💥+${item.critBonus}%`);
+                if (item.healAmount) statsText.push(`💚+${item.healAmount}`);
+                const statsStr = statsText.join(' ');
+                const buttonText = isEquipped ? 'Снять' : 'Надеть';
+                const buttonClass = isEquipped ? 'btn-use equipped' : 'btn-use';
+
+                html += `
+                    <div class="inventory-item ${rarityClass}">
+                        <div>
+                            <span class="item-name">${item.emoji} ${item.name}</span>
+                            <div class="item-stats">${statsStr} (${item.rarity})</div>
+                        </div>
+                        <button class="${buttonClass}" data-index="${index}" data-action="${isEquipped ? 'unequip' : 'equip'}">${buttonText}</button>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+
+            // Обработчики для кнопок
+            list.querySelectorAll('.btn-use').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.dataset.index);
+                    const action = this.dataset.action;
+                    if (action === 'equip') {
+                        equipItem(index);
+                    } else if (action === 'unequip') {
+                        unequipItem(index);
+                    }
+                });
+            });
+        }
+
+        function equipItem(index) {
+            const item = player.inventory[index];
+            if (!item) return;
+            // Проверяем, не занят ли слот
+            const slot = item.type;
+            if (slot === 'potion') {
+                // Зелье используется сразу
+                usePotion(item);
+                return;
+            }
+            // Если уже есть предмет в слоте, снимаем его в инвентарь
+            if (player.equipment[slot]) {
+                player.inventory.push(player.equipment[slot]);
+            }
+            // Экипируем
+            player.equipment[slot] = item;
+            // Удаляем из инвентаря
+            player.inventory.splice(index, 1);
+            recalcStats();
+            saveGame();
+            renderInventory();
+            updateMainUI();
+            addLog(`🔰 Экипировано: ${item.name}`, 'info');
+        }
+
+        function unequipItem(index) {
+            // Определяем, какой предмет снимаем (по индексу в инвентаре? или по слою?)
+            // У нас индекс указывает на предмет в инвентаре, но мы хотим снять экипированный предмет.
+            // Лучше сделать отдельную функцию для снятия по слоту.
+            // Переделаем: будем передавать слот.
+        }
+
+        // Новая функция для снятия по слоту
+        function unequipSlot(slot) {
+            if (!player.equipment[slot]) return;
+            const item = player.equipment[slot];
+            player.inventory.push(item);
+            player.equipment[slot] = null;
+            recalcStats();
+            saveGame();
+            renderInventory();
+            updateMainUI();
+            addLog(`🔰 Снято: ${item.name}`, 'info');
+        }
+
+        function usePotion(item) {
+            if (player.hp >= player.maxHp) {
+                addLog('Ваше здоровье полностью восстановлено.', 'info');
+                return;
+            }
+            const heal = item.healAmount || 0;
+            player.hp = Math.min(player.maxHp, player.hp + heal);
+            // Удаляем зелье из инвентаря
+            const idx = player.inventory.indexOf(item);
+            if (idx !== -1) player.inventory.splice(idx, 1);
+            recalcStats();
+            saveGame();
+            renderInventory();
+            updateMainUI();
+            addLog(`🧪 Использовано ${item.name}, восстановлено ${heal} HP`, 'heal');
+        }
+
+        // Обновляем обработчики в рендере инвентаря: добавим кнопку "Снять" для экипированных
+        // Изменим функцию renderInventory для поддержки снятия по слотам
+        function renderInventory() {
+            document.getElementById('equippedWeapon').textContent = player.equipment.weapon ? player.equipment.weapon.name : 'Нет';
+            document.getElementById('equippedArmor').textContent = player.equipment.armor ? player.equipment.armor.name : 'Нет';
+            document.getElementById('equippedAccessory').textContent = player.equipment.accessory ? player.equipment.accessory.name : 'Нет';
+
+            const list = document.getElementById('inventoryList');
+            if (player.inventory.length === 0) {
+                list.innerHTML = '<div style="text-align:center;color:#aaa;">Инвентарь пуст</div>';
+                return;
+            }
+
+            let html = '';
+            player.inventory.forEach((item, index) => {
+                const rarityClass = 'item-rarity-' + item.rarity;
+                let statsText = [];
+                if (item.attackBonus) statsText.push(`⚔️+${item.attackBonus}`);
+                if (item.defenseBonus) statsText.push(`🛡️+${item.defenseBonus}`);
+                if (item.hpBonus) statsText.push(`❤️+${item.hpBonus}`);
+                if (item.critBonus) statsText.push(`💥+${item.critBonus}%`);
+                if (item.healAmount) statsText.push(`💚+${item.healAmount}`);
+                const statsStr = statsText.join(' ');
+                const isPotion = item.type === 'potion';
+                const buttonText = isPotion ? 'Использовать' : 'Надеть';
+                html += `
+                    <div class="inventory-item ${rarityClass}">
+                        <div>
+                            <span class="item-name">${item.emoji} ${item.name}</span>
+                            <div class="item-stats">${statsStr} (${item.rarity})</div>
+                        </div>
+                        <button class="btn-use" data-index="${index}" data-action="${isPotion ? 'use' : 'equip'}">${buttonText}</button>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+
+            list.querySelectorAll('.btn-use').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.dataset.index);
+                    const action = this.dataset.action;
+                    if (action === 'equip') {
+                        equipItem(index);
+                    } else if (action === 'use') {
+                        const item = player.inventory[index];
+                        usePotion(item);
+                    }
+                });
+            });
+
+            // Добавляем кнопки снятия для экипированных слотов
+            // Сделаем их отдельно вверху
+            const slots = ['weapon', 'armor', 'accessory'];
+            slots.forEach(slot => {
+                const slotEl = document.getElementById('equipped' + slot.charAt(0).toUpperCase() + slot.slice(1));
+                if (player.equipment[slot]) {
+                    // Добавляем кнопку снятия рядом с названием
+                    const parent = slotEl.parentNode;
+                    // Проверяем, нет ли уже кнопки
+                    let btn = parent.querySelector('.btn-unequip-slot');
+                    if (!btn) {
+                        btn = document.createElement('button');
+                        btn.className = 'btn-use equipped';
+                        btn.textContent = 'Снять';
+                        btn.style.marginTop = '4px';
+                        btn.style.fontSize = '11px';
+                        btn.dataset.slot = slot;
+                        btn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            unequipSlot(this.dataset.slot);
+                        });
+                        parent.appendChild(btn);
+                    }
+                } else {
+                    // Удаляем кнопку, если есть
+                    const btn = parent.querySelector('.btn-unequip-slot');
+                    if (btn) btn.remove();
+                }
+            });
+        }
+
+        // =====================================================================
+        //  БОЕВАЯ СИСТЕМА С РАЗНЫМИ АТАКАМИ
         // =====================================================================
         function generateEnemy() {
             const levelScale = player.level;
-            const names = ['Гоблин','Скелет','Волк','Бандит','Тролль','Призрак','Орк'];
-            const name = names[Math.floor(Math.random()*names.length)];
-            const hp = Math.floor(10 + levelScale*4 + Math.random()*8);
-            const attack = Math.floor(3 + levelScale*2 + Math.random()*3);
-            const defense = Math.floor(1 + levelScale*1 + Math.random()*2);
-            const xpReward = Math.floor(5 + levelScale*3 + Math.random()*4);
+            const names = ['Гоблин','Скелет','Волк','Бандит','Тролль','Призрак','Орк','Демон','Дракон'];
+            const name = names[Math.floor(Math.random() * names.length)];
+            const hp = Math.floor(10 + levelScale * 5 + Math.random() * 12);
+            const attack = Math.floor(3 + levelScale * 2.5 + Math.random() * 4);
+            const defense = Math.floor(1 + levelScale * 1.2 + Math.random() * 2);
+            const xpReward = Math.floor(5 + levelScale * 4 + Math.random() * 6);
             return { name, hp, maxHp: hp, attack, defense, xpReward };
         }
 
-        function showAttackChoice() {
-            isChoosingAttack = true;
-            document.getElementById('attackChoice').classList.add('active');
-            document.getElementById('mainButtons').style.display = 'none';
-            addLog('Выберите тип атаки:', 'info');
-        }
-
-        function hideAttackChoice() {
-            isChoosingAttack = false;
-            document.getElementById('attackChoice').classList.remove('active');
-            document.getElementById('mainButtons').style.display = 'grid';
-        }
-
-        function performAttack(type) {
+        // Выполнение атаки
+        function performAction(type, attackType) {
             if (!enemy) {
-                hideAttackChoice();
+                addLog('Нет врага!', 'info');
                 return;
             }
 
             let damage, critChance, critMult, attackName;
-            if (type === 'physical') {
+            let isMagic = false;
+
+            if (attackType === 'physical') {
                 damage = Math.max(1, player.attack - Math.floor(enemy.defense * 0.5) + Math.floor(Math.random() * 3));
                 critChance = player.critChance;
                 critMult = player.critMult;
-                attackName = 'физическую';
-            } else { // magic
-                damage = Math.max(1, player.magicAttack - Math.floor(enemy.defense * 0.5) + Math.floor(Math.random() * 3));
+                attackName = 'Удар';
+                if (type === 'heavy') {
+                    damage = Math.floor(damage * 1.8);
+                    critChance = Math.min(critChance * 0.5, 50);
+                    attackName = 'Тяжёлый удар';
+                }
+                if (type === 'defend') {
+                    isDefending = true;
+                    addLog(`🛡️ Вы встали в защиту! Урон снижен в 2 раза в следующем ходе.`, 'info');
+                    updateMainUI();
+                    // Ход врага
+                    enemyTurn();
+                    return;
+                }
+            } else if (attackType === 'magic') {
+                isMagic = true;
+                damage = Math.max(1, player.magicAttack - Math.floor(enemy.defense * 0.3) + Math.floor(Math.random() * 4));
                 critChance = player.magicCritChance;
-                critMult = 150; // базовый множитель для магии
-                attackName = 'магическую';
+                critMult = 150; // базовый множитель
+                if (type === 'fireball') {
+                    damage = Math.floor(damage * 1.4);
+                    attackName = 'Огненный шар';
+                } else if (type === 'ice') {
+                    // Ледяная броня даёт защиту, но не атакует? Сделаем как атаку с эффектом замедления (пока просто атака)
+                    damage = Math.floor(damage * 1.0);
+                    attackName = 'Ледяная броня';
+                } else if (type === 'lightning') {
+                    damage = Math.floor(damage * 1.8);
+                    critChance = Math.min(critChance * 1.5, 80);
+                    attackName = 'Молния';
+                }
             }
 
+            // Крит
             let isCrit = false;
             if (Math.random() * 100 < critChance) {
                 isCrit = true;
                 damage = Math.floor(damage * (critMult / 100));
             }
 
+            // Если защита, снижаем урон
+            if (isDefending) {
+                damage = Math.floor(damage * 0.5);
+                isDefending = false;
+            }
+
             enemy.hp -= damage;
-            let logMsg = `🗡️ Вы нанесли ${damage} урона (${attackName} атака)`;
+            let logMsg = `🗡️ ${attackName} нанёс ${damage} урона`;
             if (isCrit) logMsg += ' (КРИТ!)';
+            if (isMagic) logMsg = `🧙 ${attackName} нанёс ${damage} магического урона`;
+            if (isCrit && isMagic) logMsg += ' (КРИТ!)';
             addLog(logMsg, 'damage');
 
+            // Проверка победы
             if (enemy.hp <= 0) {
-                // Победа
-                if (player.level < 100) {
-                    const xpGain = enemy.xpReward;
-                    player.xp += xpGain;
-                    addLog(`💀 ${enemy.name} повержен! +${xpGain} опыта`, 'loot');
-
-                    // Кровожадность
-                    const bloodthirstLevel = player.skills.bloodthirst || 0;
-                    if (bloodthirstLevel > 0) {
-                        const healAmount = bloodthirstLevel * 2;
-                        player.hp = Math.min(player.maxHp, player.hp + healAmount);
-                        addLog(`🩸 Кровожадность восстанавливает ${healAmount} HP!`, 'heal');
-                    }
-
-                    while (player.level < 100 && player.xp >= player.xpToNext) {
-                        player.xp -= player.xpToNext;
-                        player.level++;
-                        // Полное восстановление HP при повышении уровня
-                        player.hp = player.maxHp;
-                        player.statPoints += 2;
-                        player.skillPoints += 1;
-                        player.spellPoints += 1;
-                        addLog(`🎉 УРОВЕНЬ ${player.level}! Здоровье восстановлено, +2 очка характеристик, +1 навык, +1 заклинание!`, 'loot');
-                        player.xpToNext = getXpToNext(player.level);
-                    }
-                    if (player.level === 100) {
-                        addLog('🏆 Максимальный уровень!', 'loot');
-                        player.xpToNext = Infinity;
-                        if (player.xp > 0) player.xp = 0;
-                    }
-                } else {
-                    addLog(`💀 ${enemy.name} повержен! Вы уже на максимуме.`, 'loot');
-                }
-                enemy = null;
-                recalcStats();
-                updateMainUI();
-                updateCharWindow();
-                hideAttackChoice();
-                try { tg.sendData(JSON.stringify({ action:'victory', level:player.level })); } catch(e) {}
+                victory();
                 return;
             }
 
-            // Атака врага
+            // Ход врага
+            enemyTurn();
+        }
+
+        function enemyTurn() {
+            // Враг атакует
             let enemyHits = true;
             if (Math.random() * 100 < player.dodge) {
                 enemyHits = false;
@@ -736,6 +1271,11 @@
             }
             if (enemyHits) {
                 let enemyDamage = Math.max(1, enemy.attack - Math.floor(player.defense * 0.5) + Math.floor(Math.random() * 2));
+                // Если защита, снижаем урон
+                if (isDefending) {
+                    enemyDamage = Math.floor(enemyDamage * 0.5);
+                    isDefending = false;
+                }
                 player.hp -= enemyDamage;
                 addLog(`💢 ${enemy.name} наносит ${enemyDamage} урона`, 'damage');
                 if (player.hp <= 0) {
@@ -744,38 +1284,93 @@
                     enemy = null;
                     updateMainUI();
                     updateCharWindow();
-                    hideAttackChoice();
                     return;
                 }
             }
-
             recalcStats();
             updateMainUI();
             updateCharWindow();
-            hideAttackChoice();
-            try { tg.sendData(JSON.stringify({ action:'fight', hp:player.hp })); } catch(e) {}
         }
 
-        function onFightClick() {
-            if (!enemy) {
-                enemy = generateEnemy();
-                addLog(`⚔️ Вы встретили ${enemy.name} (HP: ${enemy.hp})`, 'info');
-                updateMainUI();
-                return;
+        function victory() {
+            // Победа
+            if (player.level < 100) {
+                const xpGain = enemy.xpReward;
+                player.xp += xpGain;
+                addLog(`💀 ${enemy.name} повержен! +${xpGain} опыта`, 'loot');
+
+                // Кровожадность
+                const bloodthirstLevel = player.skills.bloodthirst || 0;
+                if (bloodthirstLevel > 0) {
+                    const healAmount = bloodthirstLevel * 2;
+                    player.hp = Math.min(player.maxHp, player.hp + healAmount);
+                    addLog(`🩸 Кровожадность восстанавливает ${healAmount} HP!`, 'heal');
+                }
+
+                // Дроп
+                const drop = generateDrop();
+                if (drop) {
+                    player.inventory.push(drop);
+                    addLog(`🎁 Выпало: ${drop.emoji} ${drop.name} (${drop.rarity})`, 'drop');
+                }
+
+                while (player.level < 100 && player.xp >= player.xpToNext) {
+                    player.xp -= player.xpToNext;
+                    player.level++;
+                    player.hp = player.maxHp;
+                    player.statPoints += 2;
+                    player.skillPoints += 1;
+                    player.spellPoints += 1;
+                    addLog(`🎉 УРОВЕНЬ ${player.level}! Здоровье восстановлено, +2 очка характеристик, +1 навык, +1 заклинание!`, 'loot');
+                    player.xpToNext = getXpToNext(player.level);
+                }
+                if (player.level === 100) {
+                    addLog('🏆 Максимальный уровень!', 'loot');
+                    player.xpToNext = Infinity;
+                    if (player.xp > 0) player.xp = 0;
+                }
+            } else {
+                addLog(`💀 ${enemy.name} повержен! Вы уже на максимуме.`, 'loot');
             }
-            showAttackChoice();
+            enemy = null;
+            recalcStats();
+            updateMainUI();
+            updateCharWindow();
+            try { tg.sendData(JSON.stringify({ action:'victory', level:player.level })); } catch(e) {}
         }
 
+        // =====================================================================
+        //  ОБРАБОТЧИКИ КНОПОК
+        // =====================================================================
         document.getElementById('btnPhysAttack').addEventListener('click', function() {
-            performAttack('physical');
+            if (!enemy) { addLog('Нет врага!', 'info'); return; }
+            performAction('normal', 'physical');
         });
-        document.getElementById('btnMagicAttack').addEventListener('click', function() {
-            performAttack('magic');
+        document.getElementById('btnHeavyAttack').addEventListener('click', function() {
+            if (!enemy) { addLog('Нет врага!', 'info'); return; }
+            performAction('heavy', 'physical');
+        });
+        document.getElementById('btnDefend').addEventListener('click', function() {
+            if (!enemy) { addLog('Нет врага!', 'info'); return; }
+            performAction('defend', 'physical');
+        });
+
+        document.getElementById('btnFireball').addEventListener('click', function() {
+            if (!enemy) { addLog('Нет врага!', 'info'); return; }
+            performAction('fireball', 'magic');
+        });
+        document.getElementById('btnIceArmor').addEventListener('click', function() {
+            if (!enemy) { addLog('Нет врага!', 'info'); return; }
+            performAction('ice', 'magic');
+        });
+        document.getElementById('btnLightning').addEventListener('click', function() {
+            if (!enemy) { addLog('Нет врага!', 'info'); return; }
+            performAction('lightning', 'magic');
         });
 
         // Лечение
-        function heal() {
-            if (player.hp <= 0) { addLog('Вы мертвы!','damage'); return; }
+        function healAction() {
+            if (player.hp <= 0) { addLog('Вы мертвы!', 'damage'); return; }
             const healPower = 5 + player.level * 2 + (player.spells.heal || 0) * 2 + Math.random() * 5;
             const healAmount = Math.floor(healPower);
             player.hp = Math.min(player.maxHp, player.hp + healAmount);
@@ -783,16 +1378,18 @@
             updateMainUI();
             updateCharWindow();
         }
+        document.getElementById('btnHeal').addEventListener('click', healAction);
 
         // Побег
-        function flee() {
-            if (!enemy) { addLog('Нет врага.','info'); return; }
+        function fleeAction() {
+            if (!enemy) { addLog('Нет врага.', 'info'); return; }
             if (Math.random() < 0.5) {
                 addLog(`🏃 Сбежали от ${enemy.name}!`, 'info');
                 enemy = null;
-                hideAttackChoice();
+                updateMainUI();
             } else {
                 addLog(`😰 Не удалось сбежать!`, 'damage');
+                // Враг атакует
                 let enemyDamage = Math.max(1, enemy.attack - Math.floor(player.defense*0.5) + Math.floor(Math.random()*2));
                 if (Math.random()*100 < player.dodge) {
                     addLog(`🌀 Уклонились!`, 'info');
@@ -803,18 +1400,17 @@
                         player.hp = 0;
                         addLog(`💀 Вы погибли...`, 'damage');
                         enemy = null;
-                        hideAttackChoice();
                     }
                 }
                 updateMainUI();
                 updateCharWindow();
             }
         }
+        document.getElementById('btnFlee').addEventListener('click', fleeAction);
 
-        // Сброс игры (исправлен)
+        // Сброс игры
         function resetGame() {
             if (confirm('Начать заново?')) {
-                // Создаём нового игрока с теми же характеристиками, но сброс уровня и статов
                 player = {
                     name: player.name,
                     level: 1,
@@ -840,12 +1436,14 @@
                     skillPoints: 0,
                     spellPoints: 0,
                     skills: {},
-                    spells: {}
+                    spells: {},
+                    equipment: { weapon: null, armor: null, accessory: null },
+                    inventory: [],
+                    gold: 0
                 };
                 enemy = null;
-                hideAttackChoice();
-                recalcStats(); // пересчитываем статы с нулевыми навыками
-                player.hp = player.maxHp; // принудительно устанавливаем HP в максимум
+                recalcStats();
+                player.hp = player.maxHp;
                 updateMainUI();
                 updateCharWindow();
                 localStorage.removeItem('rpg_save');
@@ -853,6 +1451,7 @@
                 try { tg.sendData(JSON.stringify({ action:'reset' })); } catch(e) {}
             }
         }
+        document.getElementById('btnReset').addEventListener('click', resetGame);
 
         // =====================================================================
         //  УПРАВЛЕНИЕ ОКНАМИ
@@ -887,23 +1486,29 @@
             });
         });
 
+        // Инвентарь
+        document.getElementById('btnInventory').addEventListener('click', openInventory);
+        document.getElementById('closeInventoryModal').addEventListener('click', closeInventory);
+        document.getElementById('inventoryModal').addEventListener('click', (e)=> {
+            if (e.target === document.getElementById('inventoryModal')) closeInventory();
+        });
+
         // =====================================================================
         //  ЗАПУСК
         // =====================================================================
-        document.getElementById('btnFight').addEventListener('click', onFightClick);
-        document.getElementById('btnHeal').addEventListener('click', heal);
-        document.getElementById('btnFlee').addEventListener('click', flee);
-        document.getElementById('btnReset').addEventListener('click', resetGame);
-
         loadGame();
         recalcStats();
-        // Убедимся, что HP корректно при загрузке
         if (player.hp > player.maxHp) player.hp = player.maxHp;
         updateMainUI();
         addLog(`👋 Привет, ${player.name}!`, 'info');
 
+        // Показываем кнопки атак только когда есть враг (добавим автоматическое переключение)
+        // Но для удобства покажем сразу обе группы, пусть будут активны, но атака возможна только при наличии врага.
+        // Сделаем так, чтобы физика и магия отображались всегда, но в бою работают только при наличии врага.
+        // Для переключения между физикой и магией можно добавить кнопку, но пока оставим обе группы.
+
         window.addEventListener('beforeunload', ()=> saveGame());
-        console.log('RPG с исправлениями загружена.');
+        console.log('RPG с боем, снаряжением и дропом загружена.');
     </script>
 </body>
 </html>
