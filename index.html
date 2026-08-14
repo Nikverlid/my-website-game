@@ -305,10 +305,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85);
             border-radius: 24px;
             padding: 8px 12px;
-            border: 1px solid rgba(255,255,255,0.15);
+            border-width: 2px;
+            border-style: solid;
             font-size: 14px;
             transform: translate(-50%, -50%);
             min-width: 80px;
@@ -316,7 +317,7 @@
             backdrop-filter: blur(4px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.6);
         }
-        .stat-node-big .stat-label { font-weight: 600; color: #f1c40f; font-size: 15px; }
+        .stat-node-big .stat-label { font-weight: 600; font-size: 15px; }
         .stat-node-big .stat-val { color: #fff; font-weight: 700; font-size: 20px; margin: 4px 0; }
         .stat-node-big .stat-plus {
             background: #2ecc71;
@@ -361,7 +362,7 @@
 </head>
 <body>
 
-    <!-- ===== ОСНОВНОЙ ИГРОВОЙ ЭКРАН ===== -->
+    <!-- ===== ОСНОВНОЙ ЭКРАН ===== -->
     <div class="game-container" id="gameContainer">
         <h1>⚔️ War of Virtuosos</h1>
         <div class="top-status">
@@ -387,7 +388,6 @@
         <div class="modal">
             <button class="modal-close" id="closeCharModal">✕</button>
             <div class="char-grid">
-                <!-- ЛЕВАЯ ПАНЕЛЬ -->
                 <div class="stat-panel">
                     <div class="tabs">
                         <button class="tab-btn active" data-tab="magic">🧙 Магия</button>
@@ -395,13 +395,11 @@
                     </div>
                     <div class="stat-content" id="statContent"></div>
                 </div>
-                <!-- ЦЕНТР -->
                 <div class="center-panel">
                     <div class="frame-container" id="frameContainer">
                         <svg viewBox="0 0 200 200">
                             <ellipse cx="100" cy="175" rx="50" ry="15" class="shadow-ellipse" />
                             <circle cx="100" cy="100" r="80" class="frame-border" id="frameCircle" stroke="#cd7f32" />
-                            <!-- 6 рук + тень -->
                             <circle cx="100" cy="55" r="14" fill="#d4a373" stroke="#fff" stroke-width="1.5" />
                             <line x1="100" y1="69" x2="100" y2="125" stroke="#d4a373" stroke-width="4" />
                             <line x1="100" y1="85" x2="50" y2="55" stroke="#d4a373" stroke-width="3" />
@@ -424,7 +422,6 @@
                         <div class="level-badge" id="levelBadge">Ур. 1</div>
                     </div>
                 </div>
-                <!-- ПРАВАЯ ПАНЕЛЬ -->
                 <div class="right-panel">
                     <button class="char-stats-btn" id="openStatsModalBtn">📊 Характеристики</button>
                     <div style="margin-top:12px; text-align:center; font-size:14px; color:#aaa;">
@@ -474,7 +471,6 @@
             constitution: 1,
             luck: 1,
             statPoints: 0,
-            // магические параметры (будут пересчитываться)
             magicAttack: 5,
             magicCritChance: 0,
             magicDodge: 0
@@ -491,7 +487,6 @@
             return Math.floor(10 * Math.pow(1.5, level - 1)) + 5;
         }
 
-        // Возвращает бонусы в процентах (целые числа)
         function getIntellectBonuses(intel) {
             let magicAttackBonus = 0;
             let magicCritChanceBonus = 0;
@@ -574,13 +569,11 @@
             const intel = getIntellectBonuses(player.intelligence);
             const wis = getWisdomBonuses(player.wisdom);
 
-            // Базовая магическая атака (можно вынести в константу)
             const baseMagicAttack = 5;
-            // Суммарный бонус в процентах
             const totalMagicBonusPercent = intel.magicAttackBonus;
             player.magicAttack = Math.round(baseMagicAttack * (1 + totalMagicBonusPercent / 100));
-            player.magicCritChance = intel.magicCritChanceBonus; // уже проценты
-            player.magicDodge = wis.magicDodgeBonus; // уже проценты
+            player.magicCritChance = intel.magicCritChanceBonus;
+            player.magicDodge = wis.magicDodgeBonus;
 
             const phys = getPhysicalBonuses(player.strength, player.agility, player.constitution, player.luck);
             player.attack = phys.physAttack;
@@ -680,7 +673,7 @@
         }
 
         // =====================================================================
-        //  МОДАЛ ХАРАКТЕРИСТИК (ЗВЕЗДА)
+        //  МОДАЛ ХАРАКТЕРИСТИК – ЗВЕЗДА
         // =====================================================================
         function openStatsModal() {
             document.getElementById('statsModal').classList.add('active');
@@ -703,36 +696,45 @@
                 { key:'constitution', label:'Телослож.', color:'#f39c12' },
                 { key:'luck', label:'Удача', color:'#1abc9c' }
             ];
-            const angles = [0,60,120,180,240,300];
+            const angles = [0, 60, 120, 180, 240, 300];
             const cx=50, cy=50, r=42;
+
             let svg = `
                 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="50" cy="50" r="46" fill="none" stroke="#444" stroke-width="2" />
-                    <polygon points="50,5 75,35 65,35 90,70 70,70 50,95 30,70 10,70 35,35 25,35" fill="rgba(255,215,0,0.05)" stroke="#f1c40f" stroke-width="1.5" />
+                    <circle cx="50" cy="50" r="46" fill="none" stroke="#333" stroke-width="1.5" />
+                    <polygon points="50,5 75,35 65,35 90,70 70,70 50,95 30,70 10,70 35,35 25,35"
+                             fill="rgba(0,0,0,0.15)" stroke="#000" stroke-width="2.5" />
             `;
-            stats.forEach((s,i) => {
-                const angle = angles[i]*Math.PI/180;
-                const x = cx + r*Math.cos(angle);
-                const y = cy + r*Math.sin(angle);
-                svg += `<line x1="50" y1="50" x2="${x}" y2="${y}" stroke="#555" stroke-width="1" />`;
+
+            stats.forEach((s, i) => {
+                const angle = angles[i] * Math.PI / 180;
+                const x = cx + r * Math.cos(angle);
+                const y = cy + r * Math.sin(angle);
+                svg += `<line x1="50" y1="50" x2="${x}" y2="${y}" stroke="${s.color}" stroke-width="2.5" />`;
+                svg += `<circle cx="${x}" cy="${y}" r="3.5" fill="${s.color}" stroke="#fff" stroke-width="1" />`;
             });
+
             svg += `</svg>`;
             container.innerHTML = svg;
 
-            stats.forEach((s,i) => {
-                const angle = angles[i]*Math.PI/180;
+            stats.forEach((s, i) => {
+                const angle = angles[i] * Math.PI / 180;
                 const rNode = 44;
-                const x = 50 + rNode*Math.cos(angle);
-                const y = 50 + rNode*Math.sin(angle);
+                const x = 50 + rNode * Math.cos(angle);
+                const y = 50 + rNode * Math.sin(angle);
                 const val = player[s.key];
-                const maxed = val>=100;
-                const canUp = player.statPoints>0 && !maxed;
+                const maxed = val >= 100;
+                const canUp = player.statPoints > 0 && !maxed;
+
                 const node = document.createElement('div');
                 node.className = 'stat-node-big';
-                node.style.left = x+'%';
-                node.style.top = y+'%';
+                node.style.left = x + '%';
+                node.style.top = y + '%';
+                node.style.borderColor = s.color;
+                node.style.background = 'rgba(0,0,0,0.85)';
+
                 node.innerHTML = `
-                    <span class="stat-label">${s.label}</span>
+                    <span class="stat-label" style="color:${s.color};">${s.label}</span>
                     <span class="stat-val">${val}</span>
                     <button class="stat-plus" ${canUp ? '' : 'disabled'} data-stat="${s.key}">+</button>
                 `;
@@ -911,7 +913,7 @@
         }
 
         // =====================================================================
-        //  УПРАВЛЕНИЕ МОДАЛЬНЫМИ ОКНАМИ
+        //  УПРАВЛЕНИЕ ОКНАМИ
         // =====================================================================
         const charModal = document.getElementById('charModal');
         const openCharBtn = document.getElementById('btnOpenChar');
@@ -934,7 +936,6 @@
         closeStatsBtn.addEventListener('click', closeStatsModal);
         statsModal.addEventListener('click', (e)=> { if (e.target===statsModal) closeStatsModal(); });
 
-        // Переключение вкладок статистики
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -945,7 +946,7 @@
         });
 
         // =====================================================================
-        //  ИНИЦИАЛИЗАЦИЯ ИГРЫ
+        //  ЗАПУСК
         // =====================================================================
         loadGame();
         recalcStats();
@@ -958,7 +959,7 @@
         document.getElementById('btnReset').addEventListener('click', resetGame);
 
         window.addEventListener('beforeunload', ()=> saveGame());
-        console.log('RPG с новой магической формулой загружена!');
+        console.log('RPG с новой звёздной картой загружена!');
     </script>
 </body>
 </html>
