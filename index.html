@@ -6,13 +6,11 @@
     <title>War of the Virtuosos</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* ===== БАЗОВЫЕ СТИЛИ ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: linear-gradient(145deg, #0b0b1a, #1a1a2e); color: #eee; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px; }
         .game-container { max-width: 480px; width: 100%; background: rgba(255,255,255,0.04); backdrop-filter: blur(8px); border-radius: 36px; padding: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.06); }
         h1 { text-align: center; font-weight: 700; font-size: 22px; letter-spacing: 1px; background: linear-gradient(135deg, #f7971e, #ffd200); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 12px; }
 
-        /* ===== БОЕВАЯ ПАНЕЛЬ ===== */
         .battle-panel {
             background: rgba(0,0,0,0.4);
             border-radius: 20px;
@@ -40,22 +38,15 @@
         .hp-bar-fill.enemy { background: linear-gradient(90deg, #e74c3c, #c0392b); }
         .hp-bar-fill.player { background: linear-gradient(90deg, #2ecc71, #27ae60); }
 
-        .battle-panel .enemy-name {
-            font-weight: 700;
-            color: #f1c40f;
-        }
+        .battle-panel .enemy-name { font-weight: 700; color: #f1c40f; }
 
-        /* ===== КНОПКИ АТАК ===== */
         .attack-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 8px;
             margin-bottom: 10px;
         }
-        .attack-buttons .btn {
-            padding: 10px 0;
-            font-size: 13px;
-        }
+        .attack-buttons .btn { padding: 10px 0; font-size: 13px; }
         .btn-attack-phys { background: #e67e22; }
         .btn-attack-phys:active { background: #d35400; }
         .btn-attack-heavy { background: #c0392b; }
@@ -128,7 +119,6 @@
         .log-entry.loot { color: #f1c40f; }
         .log-entry.drop { color: #9b59b6; }
 
-        /* ===== МОДАЛЬНЫЕ ОКНА ===== */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -378,7 +368,6 @@
         .skill-points-display { display: flex; justify-content: space-between; font-size: 14px; color: #aaa; margin-bottom: 8px; padding: 0 4px; }
         .skill-points-display span { color: #f1c40f; font-weight: 700; }
 
-        /* ===== ИНВЕНТАРЬ ===== */
         .inventory-modal {
             display: none;
             position: fixed;
@@ -443,7 +432,6 @@
         .equipped-slots .slot .slot-label { color: #aaa; font-size: 11px; }
         .equipped-slots .slot .slot-item { font-weight: 600; color: #f1c40f; font-size: 13px; }
 
-        /* ===== НАСТРОЙКИ В ПЕРСОНАЖЕ ===== */
         .settings-panel {
             background: rgba(0,0,0,0.3);
             border-radius: 20px;
@@ -506,11 +494,8 @@
     </style>
 </head>
 <body>
-
-    <!-- ===== ОСНОВНОЙ ЭКРАН ===== -->
     <div class="game-container" id="gameContainer">
         <h1>⚔️ War of Virtuosos</h1>
-        <!-- Боевая панель -->
         <div class="battle-panel" id="battlePanel">
             <div class="hp-row">
                 <span class="enemy-name" id="enemyName">Враг: ---</span>
@@ -538,7 +523,6 @@
             <div class="log-entry info">Нажмите любую кнопку атаки для начала боя.</div>
         </div>
 
-        <!-- Кнопки атак (динамические) -->
         <div class="attack-buttons" id="attackButtons">
             <button class="btn btn-attack-phys" id="btnAttack1">⚔️ Удар</button>
             <button class="btn btn-attack-heavy" id="btnAttack2">💥 Тяжёлый</button>
@@ -557,7 +541,7 @@
         </div>
     </div>
 
-    <!-- ===== МОДАЛЬНОЕ ОКНО ПЕРСОНАЖА ===== -->
+    <!-- Модальные окна -->
     <div class="modal-overlay" id="charModal">
         <div class="modal">
             <button class="modal-close" id="closeCharModal">✕</button>
@@ -569,7 +553,6 @@
                         <button class="tab-btn" data-tab="settings">⚙️ Настройки</button>
                     </div>
                     <div class="stat-content" id="statContent"></div>
-                    <!-- Панель настроек (по умолчанию скрыта) -->
                     <div class="settings-panel" id="settingsPanel" style="display:none;">
                         <div class="setting-row">
                             <span class="setting-label">Тип атак</span>
@@ -619,7 +602,6 @@
                     </div>
                 </div>
             </div>
-            <!-- Навыки/заклинания -->
             <div class="skills-spells-section">
                 <div class="tabs" id="skillsSpellsTabs">
                     <button class="tab-btn active" data-tab="skills">⚔️ Навыки</button>
@@ -634,7 +616,6 @@
         </div>
     </div>
 
-    <!-- ===== МОДАЛЬНОЕ ОКНО ХАРАКТЕРИСТИК ===== -->
     <div class="stats-modal-overlay" id="statsModal">
         <div class="stats-modal">
             <button class="stats-modal-close" id="closeStatsModal">✕</button>
@@ -644,7 +625,6 @@
         </div>
     </div>
 
-    <!-- ===== МОДАЛЬНОЕ ОКНО ИНВЕНТАРЯ ===== -->
     <div class="inventory-modal" id="inventoryModal">
         <div class="modal">
             <button class="modal-close" id="closeInventoryModal">✕</button>
@@ -659,14 +639,14 @@
     </div>
 
     <script>
-        // =====================================================================
-        //  ИНИЦИАЛИЗАЦИЯ
+                // =====================================================================
+        //  ИНИЦИАЛИЗАЦИЯ TELEGRAM
         // =====================================================================
         const tg = window.Telegram.WebApp;
         tg.ready();
 
         // =====================================================================
-        //  ИГРОВОЕ СОСТОЯНИЕ (расширенное)
+        //  ИГРОВОЕ СОСТОЯНИЕ (ПОЛНОЕ)
         // =====================================================================
         let player = {
             name: "Герой",
@@ -701,29 +681,40 @@
             },
             inventory: [],
             gold: 0,
-            // Настройки
-            attackMode: 'physical' // 'physical' или 'magic'
+            attackMode: 'physical'
         };
 
         let enemy = null;
         let isDefending = false;
+        let isIceArmor = false;
+        let iceArmorBonus = 0;
 
         // =====================================================================
-        //  СИСТЕМА ПРЕДМЕТОВ (без изменений)
+        //  СИСТЕМА ПРЕДМЕТОВ (РАСШИРЕННАЯ)
         // =====================================================================
         const itemTemplates = {
-            'Iron Sword': { type: 'weapon', name: 'Железный меч', attackBonus: 4, defenseBonus: 0, rarity: 'common', emoji: '⚔️' },
+            // Оружие (физическое)
+            'Iron Sword': { type: 'weapon', name: 'Железный меч', attackBonus: 4, rarity: 'common', emoji: '⚔️' },
             'Steel Blade': { type: 'weapon', name: 'Стальной клинок', attackBonus: 8, defenseBonus: 1, rarity: 'rare', emoji: '🗡️' },
             'Crystal Sword': { type: 'weapon', name: 'Хрустальный меч', attackBonus: 12, critBonus: 5, rarity: 'epic', emoji: '🔮' },
             'Dragon Slayer': { type: 'weapon', name: 'Драконоборец', attackBonus: 20, critBonus: 10, rarity: 'legendary', emoji: '🐉' },
+            // Оружие (магическое)
+            'Mage Staff': { type: 'weapon', name: 'Посох мага', magicAttackBonus: 5, rarity: 'rare', emoji: '🪄' },
+            'Fire Wand': { type: 'weapon', name: 'Жезл огня', magicAttackBonus: 12, rarity: 'epic', emoji: '🔥' },
+            // Броня
             'Leather Armor': { type: 'armor', name: 'Кожаная броня', defenseBonus: 3, rarity: 'common', emoji: '🛡️' },
             'Chain Mail': { type: 'armor', name: 'Кольчуга', defenseBonus: 6, rarity: 'rare', emoji: '⛓️' },
             'Plate Armor': { type: 'armor', name: 'Латный доспех', defenseBonus: 10, hpBonus: 10, rarity: 'epic', emoji: '🛡️' },
             'Mithril Armor': { type: 'armor', name: 'Мифриловая броня', defenseBonus: 15, hpBonus: 20, rarity: 'legendary', emoji: '✨' },
+            // Аксессуары (физические)
             'Ring of Strength': { type: 'accessory', name: 'Кольцо силы', attackBonus: 3, rarity: 'common', emoji: '💍' },
             'Amulet of Protection': { type: 'accessory', name: 'Амулет защиты', defenseBonus: 3, rarity: 'rare', emoji: '📿' },
             'Crystal Amulet': { type: 'accessory', name: 'Хрустальный амулет', attackBonus: 5, defenseBonus: 5, rarity: 'epic', emoji: '💎' },
             'Phoenix Feather': { type: 'accessory', name: 'Перо Феникса', hpBonus: 15, rarity: 'legendary', emoji: '🔥' },
+            // Аксессуары (магические)
+            'Magic Amulet': { type: 'accessory', name: 'Амулет магии', magicAttackBonus: 5, rarity: 'rare', emoji: '🔮' },
+            'Magic Ring': { type: 'accessory', name: 'Кольцо магии', magicAttackBonus: 3, rarity: 'common', emoji: '💍' },
+            // Зелья
             'Health Potion': { type: 'potion', name: 'Зелье здоровья', healAmount: 15, rarity: 'common', emoji: '🧪' },
             'Greater Potion': { type: 'potion', name: 'Большое зелье', healAmount: 35, rarity: 'rare', emoji: '🧪' },
         };
@@ -739,6 +730,7 @@
                 defenseBonus: template.defenseBonus || 0,
                 hpBonus: template.hpBonus || 0,
                 critBonus: template.critBonus || 0,
+                magicAttackBonus: template.magicAttackBonus || 0,
                 healAmount: template.healAmount || 0,
                 rarity: template.rarity || 'common',
                 emoji: template.emoji || '📦'
@@ -751,13 +743,15 @@
                 'Iron Sword', 'Leather Armor', 'Ring of Strength', 'Health Potion',
                 'Steel Blade', 'Chain Mail', 'Amulet of Protection', 'Greater Potion',
                 'Crystal Sword', 'Plate Armor', 'Crystal Amulet',
-                'Dragon Slayer', 'Mithril Armor', 'Phoenix Feather'
+                'Dragon Slayer', 'Mithril Armor', 'Phoenix Feather',
+                'Mage Staff', 'Fire Wand', 'Magic Amulet', 'Magic Ring'
             ];
             const weights = {
                 'Iron Sword': 20, 'Leather Armor': 20, 'Ring of Strength': 20, 'Health Potion': 30,
                 'Steel Blade': 15, 'Chain Mail': 15, 'Amulet of Protection': 15, 'Greater Potion': 20,
                 'Crystal Sword': 8, 'Plate Armor': 8, 'Crystal Amulet': 8,
-                'Dragon Slayer': 3, 'Mithril Armor': 3, 'Phoenix Feather': 3
+                'Dragon Slayer': 3, 'Mithril Armor': 3, 'Phoenix Feather': 3,
+                'Mage Staff': 10, 'Fire Wand': 5, 'Magic Amulet': 10, 'Magic Ring': 15
             };
             let totalWeight = 0;
             for (let id of pool) totalWeight += (weights[id] || 10);
@@ -772,7 +766,7 @@
         }
 
         // =====================================================================
-        //  ФУНКЦИИ РАСЧЁТА (обновлены с учётом снаряжения)
+        //  ФУНКЦИИ РАСЧЁТА (С УЧЁТОМ НОВЫХ БОНУСОВ)
         // =====================================================================
         function getXpToNext(level) {
             if (level >= 100) return Infinity;
@@ -895,6 +889,7 @@
             if (eq.weapon) {
                 attack += eq.weapon.attackBonus || 0;
                 critChance += eq.weapon.critBonus || 0;
+                magicAttack += eq.weapon.magicAttackBonus || 0;
             }
             if (eq.armor) {
                 defense += eq.armor.defenseBonus || 0;
@@ -904,7 +899,12 @@
                 attack += eq.accessory.attackBonus || 0;
                 defense += eq.accessory.defenseBonus || 0;
                 maxHp += eq.accessory.hpBonus || 0;
+                magicAttack += eq.accessory.magicAttackBonus || 0;
             }
+
+            // ЛИНЕЙНЫЕ БОНУСЫ ОТ ХАРАКТЕРИСТИК
+            attack += Math.floor(player.strength / 2);
+            magicAttack += Math.floor(player.intelligence / 2);
 
             player.attack = attack;
             player.defense = defense;
@@ -919,7 +919,7 @@
         }
 
         // =====================================================================
-        //  СОХРАНЕНИЕ / ЗАГРУЗКА
+        //  СОХРАНЕНИЕ И ЗАГРУЗКА
         // =====================================================================
         function saveGame() {
             try { localStorage.setItem('rpg_save', JSON.stringify(player)); } catch(e) {}
@@ -969,7 +969,7 @@
         }
 
         // =====================================================================
-        //  UI ОБНОВЛЕНИЯ (основной экран)
+        //  ОБНОВЛЕНИЕ UI (ОСНОВНОЙ ЭКРАН)
         // =====================================================================
         function updateMainUI() {
             document.getElementById('playerNameBattle').textContent = player.name;
@@ -994,7 +994,6 @@
                 document.getElementById('enemyHpFill').style.width = '0%';
             }
 
-            // Обновляем кнопки атак в зависимости от режима
             updateAttackButtons();
         }
 
@@ -1008,9 +1007,6 @@
             if (logArea.children.length > 50) logArea.removeChild(logArea.children[0]);
         }
 
-        // =====================================================================
-        //  ОБНОВЛЕНИЕ КНОПОК АТАК
-        // =====================================================================
         function updateAttackButtons() {
             const btn1 = document.getElementById('btnAttack1');
             const btn2 = document.getElementById('btnAttack2');
@@ -1026,7 +1022,7 @@
                 btn3.textContent = '🛡️ Защита';
                 btn3.className = 'btn btn-attack-defend';
                 btn3.dataset.action = 'defend';
-            } else { // magic
+            } else {
                 btn1.textContent = '🔥 Огненный шар';
                 btn1.className = 'btn btn-attack-magic-fire';
                 btn1.dataset.action = 'fireball';
@@ -1040,8 +1036,10 @@
         }
 
         // =====================================================================
-        //  ОКНО ПЕРСОНАЖА (с настройками)
+        //  ОКНО ПЕРСОНАЖА
         // =====================================================================
+        let currentStatTab = 'magic';
+
         function updateCharWindow() {
             const level = player.level;
             const tier = Math.min(Math.floor(level / 20), 5);
@@ -1054,14 +1052,13 @@
             document.getElementById('skillPointsDisplay').textContent = player.skillPoints;
             document.getElementById('spellPointsDisplay').textContent = player.spellPoints;
             renderTree(currentTreeTab);
-            // Обновляем настройки
+
             const toggle = document.getElementById('attackTypeToggle');
             toggle.textContent = player.attackMode === 'physical' ? 'Физический' : 'Магический';
             toggle.className = 'setting-toggle active';
             document.getElementById('codeMessage').textContent = '';
         }
 
-        let currentStatTab = 'magic';
         function updateStatPanel() {
             const container = document.getElementById('statContent');
             if (currentStatTab === 'magic') {
@@ -1089,10 +1086,8 @@
                     <div class="row"><span class="label">🍀 Удача</span><span class="val">${player.luck}</span></div>
                 `;
             } else if (currentStatTab === 'settings') {
-                // Панель настроек показываем отдельно
                 container.innerHTML = '';
                 document.getElementById('settingsPanel').style.display = 'block';
-                // Обновим тоггл и сообщение
                 const toggle = document.getElementById('attackTypeToggle');
                 toggle.textContent = player.attackMode === 'physical' ? 'Физический' : 'Магический';
                 toggle.className = 'setting-toggle active';
@@ -1101,14 +1096,13 @@
             } else {
                 container.innerHTML = '';
             }
-            // Скрываем панель настроек, если выбрана не вкладка настроек
             if (currentStatTab !== 'settings') {
                 document.getElementById('settingsPanel').style.display = 'none';
             }
         }
 
         // =====================================================================
-        //  МОДАЛ ХАРАКТЕРИСТИК (без изменений)
+        //  МОДАЛ ХАРАКТЕРИСТИК (ЗВЕЗДА)
         // =====================================================================
         function openStatsModal() {
             document.getElementById('statsModal').classList.add('active');
@@ -1120,6 +1114,7 @@
             document.getElementById('statsModal').classList.remove('active');
             document.body.style.overflow = '';
         }
+
         function renderBigHexagram() {
             const container = document.getElementById('hexagramBig');
             const stats = [
@@ -1191,7 +1186,7 @@
         }
 
         // =====================================================================
-        //  НАВЫКИ И ЗАКЛИНАНИЯ (без изменений)
+        //  НАВЫКИ И ЗАКЛИНАНИЯ
         // =====================================================================
         const skillsData = [
             { id: 'power_strike', name: 'Силовой удар', icon: '💪', desc: '+2 к физ. атаке за уровень' },
@@ -1202,13 +1197,14 @@
         ];
         const spellsData = [
             { id: 'fireball', name: 'Огненный шар', icon: '🔥', desc: '+3 к маг. атаке за уровень' },
-            { id: 'ice_armor', name: 'Ледяная броня', icon: '❄️', desc: '+2% к маг. уклонению за уровень' },
+            { id: 'ice_armor', name: 'Ледяная броня', icon: '❄️', desc: '+2% к маг. уклонению и защите за уровень' },
             { id: 'lightning', name: 'Молния', icon: '⚡', desc: '+2% к шансу маг. крита за уровень' },
             { id: 'heal', name: 'Исцеление', icon: '💚', desc: '+2 к лечению за уровень' },
             { id: 'shield', name: 'Щит', icon: '🛡️', desc: '+1 к защите за уровень' }
         ];
 
         let currentTreeTab = 'skills';
+
         function renderTree(tab) {
             const container = document.getElementById('treeContainer');
             const data = tab === 'skills' ? skillsData : spellsData;
@@ -1301,6 +1297,7 @@
                 if (item.defenseBonus) statsText.push(`🛡️+${item.defenseBonus}`);
                 if (item.hpBonus) statsText.push(`❤️+${item.hpBonus}`);
                 if (item.critBonus) statsText.push(`💥+${item.critBonus}%`);
+                if (item.magicAttackBonus) statsText.push(`🧙+${item.magicAttackBonus}`);
                 if (item.healAmount) statsText.push(`💚+${item.healAmount}`);
                 const statsStr = statsText.join(' ');
                 const isPotion = item.type === 'potion';
@@ -1330,12 +1327,10 @@
                 });
             });
 
-            // Кнопки снятия для экипированных слотов
             const slots = ['weapon', 'armor', 'accessory'];
             slots.forEach(slot => {
                 const slotEl = document.getElementById('equipped' + slot.charAt(0).toUpperCase() + slot.slice(1));
                 const parent = slotEl.parentNode;
-                // Удаляем старую кнопку, если есть
                 let oldBtn = parent.querySelector('.btn-unequip-slot');
                 if (oldBtn) oldBtn.remove();
                 if (player.equipment[slot]) {
@@ -1401,8 +1396,7 @@
             updateMainUI();
             addLog(`🧪 Использовано ${item.name}, восстановлено ${heal} HP`, 'heal');
         }
-
-        // =====================================================================
+                // =====================================================================
         //  БОЕВАЯ СИСТЕМА
         // =====================================================================
         function generateEnemy() {
@@ -1416,30 +1410,24 @@
             return { name, hp, maxHp: hp, attack, defense, xpReward };
         }
 
-        // Функция атаки (вызывается из обработчиков кнопок)
+        // Основная функция выполнения действия (атака, защита, ледяная броня)
         function performAction(action) {
-            // Если врага нет, создаём
+            // Если врага нет – создаём
             if (!enemy) {
                 enemy = generateEnemy();
                 addLog(`⚔️ Вы встретили ${enemy.name} (HP: ${enemy.hp})`, 'info');
                 updateMainUI();
-                // После создания врага продолжаем атаку в этом же ходе?
-                // Можно сразу выполнить атаку, но лучше подождать повторного клика.
-                // Но для удобства сделаем так: после появления врага сразу же выполняем атаку.
-                // Для этого вызовем эту же функцию ещё раз (с тем же действием).
-                // Чтобы избежать рекурсии, проверим, что враг создан.
+                // После создания врага сразу выполняем атаку тем же действием
                 if (enemy) {
-                    // Выполняем атаку
-                    executeAttack(action);
+                    executeAction(action);
                 }
                 return;
             } else {
-                executeAttack(action);
+                executeAction(action);
             }
         }
 
-        function executeAttack(action) {
-            // Проверка, жив ли враг
+        function executeAction(action) {
             if (!enemy || enemy.hp <= 0) {
                 enemy = null;
                 addLog('Враг повержен!', 'info');
@@ -1447,7 +1435,7 @@
                 return;
             }
 
-            let damage, critChance, critMult, attackName;
+            let damage = 0, critChance = 0, critMult = 150, attackName = '';
             let isMagic = false;
 
             if (player.attackMode === 'physical') {
@@ -1465,7 +1453,6 @@
                 } else if (action === 'defend') {
                     isDefending = true;
                     addLog(`🛡️ Вы встали в защиту! Урон снижен в 2 раза в следующем ходе.`, 'info');
-                    // Ход врага
                     enemyTurn();
                     updateMainUI();
                     return;
@@ -1478,26 +1465,27 @@
                     damage = Math.max(1, player.magicAttack - Math.floor(enemy.defense * 0.3) + Math.floor(Math.random() * 4));
                     damage = Math.floor(damage * 1.4);
                     critChance = player.magicCritChance;
-                    critMult = 150;
                     attackName = 'Огненный шар';
                 } else if (action === 'ice') {
-                    damage = Math.max(1, player.magicAttack - Math.floor(enemy.defense * 0.3) + Math.floor(Math.random() * 4));
-                    damage = Math.floor(damage * 1.0);
-                    critChance = player.magicCritChance;
-                    critMult = 150;
-                    attackName = 'Ледяная броня';
+                    // Ледяная броня – защитное заклинание
+                    const spellLevel = player.spells.ice_armor || 0;
+                    iceArmorBonus = 3 * spellLevel;
+                    isIceArmor = true;
+                    addLog(`❄️ Ледяная броня увеличивает защиту на ${iceArmorBonus} на 1 ход!`, 'info');
+                    enemyTurn();
+                    updateMainUI();
+                    return;
                 } else if (action === 'lightning') {
                     damage = Math.max(1, player.magicAttack - Math.floor(enemy.defense * 0.3) + Math.floor(Math.random() * 4));
                     damage = Math.floor(damage * 1.8);
                     critChance = Math.min(player.magicCritChance * 1.5, 80);
-                    critMult = 150;
                     attackName = 'Молния';
                 } else {
                     damage = 0;
                 }
             }
 
-            // Проверка крита
+            // Крит
             let isCrit = false;
             if (Math.random() * 100 < critChance) {
                 isCrit = true;
@@ -1517,17 +1505,16 @@
             if (isCrit && isMagic) logMsg += ' (КРИТ!)';
             addLog(logMsg, 'damage');
 
-            // Проверка победы
             if (enemy.hp <= 0) {
                 victory();
                 return;
             }
 
-            // Ход врага
             enemyTurn();
             updateMainUI();
         }
 
+        // Ход врага
         function enemyTurn() {
             if (!enemy) return;
             let enemyHits = true;
@@ -1536,7 +1523,14 @@
                 addLog(`🌀 Вы уклонились от атаки ${enemy.name}!`, 'info');
             }
             if (enemyHits) {
-                let enemyDamage = Math.max(1, enemy.attack - Math.floor(player.defense * 0.5) + Math.floor(Math.random() * 2));
+                let actualDefense = player.defense;
+                // Если активна ледяная броня, добавляем бонус к защите
+                if (isIceArmor) {
+                    actualDefense += iceArmorBonus;
+                    isIceArmor = false; // сбрасываем после одного использования
+                    addLog(`❄️ Ледяная броня увеличила защиту до ${actualDefense}`, 'info');
+                }
+                let enemyDamage = Math.max(1, enemy.attack - Math.floor(actualDefense * 0.5) + Math.floor(Math.random() * 2));
                 if (isDefending) {
                     enemyDamage = Math.floor(enemyDamage * 0.5);
                     isDefending = false;
@@ -1557,6 +1551,7 @@
             updateCharWindow();
         }
 
+        // Победа
         function victory() {
             if (player.level < 100) {
                 const xpGain = enemy.xpReward;
@@ -1602,38 +1597,10 @@
         }
 
         // =====================================================================
-        //  КОД ДЛЯ 100 УРОВНЯ
-        // =====================================================================
-        function applyCode(code) {
-            if (code === 'Nikverlid2029') {
-                // Устанавливаем 100 уровень
-                player.level = 100;
-                player.xp = 0;
-                player.xpToNext = Infinity;
-                // Даём очки характеристик (можно много)
-                player.statPoints += 200; // чтобы точно хватило на всё
-                player.skillPoints += 100;
-                player.spellPoints += 100;
-                // Пересчёт
-                recalcStats();
-                player.hp = player.maxHp;
-                saveGame();
-                updateMainUI();
-                updateCharWindow();
-                document.getElementById('codeMessage').textContent = '✅ Код активирован! Вы получили 100 уровень!';
-                document.getElementById('codeMessage').style.color = '#2ecc71';
-                addLog('🔮 Код Nikverlid2029 активирован! Вы достигли 100 уровня!', 'loot');
-            } else {
-                document.getElementById('codeMessage').textContent = '❌ Неверный код.';
-                document.getElementById('codeMessage').style.color = '#e74c3c';
-            }
-        }
-
-        // =====================================================================
         //  ОБРАБОТЧИКИ КНОПОК
         // =====================================================================
 
-        // Кнопки атак (общий обработчик)
+        // Атаки (перенаправляем на performAction)
         document.getElementById('btnAttack1').addEventListener('click', function() {
             const action = this.dataset.action || 'normal';
             performAction(action);
@@ -1733,6 +1700,31 @@
         document.getElementById('btnReset').addEventListener('click', resetGame);
 
         // =====================================================================
+        //  КОД ДЛЯ 100 УРОВНЯ (обработчик в настройках)
+        // =====================================================================
+        function applyCode(code) {
+            if (code === 'Nikverlid2029') {
+                player.level = 100;
+                player.xp = 0;
+                player.xpToNext = Infinity;
+                player.statPoints += 200;
+                player.skillPoints += 100;
+                player.spellPoints += 100;
+                recalcStats();
+                player.hp = player.maxHp;
+                saveGame();
+                updateMainUI();
+                updateCharWindow();
+                document.getElementById('codeMessage').textContent = '✅ Код активирован! Вы получили 100 уровень!';
+                document.getElementById('codeMessage').style.color = '#2ecc71';
+                addLog('🔮 Код Nikverlid2029 активирован! Вы достигли 100 уровня!', 'loot');
+            } else {
+                document.getElementById('codeMessage').textContent = '❌ Неверный код.';
+                document.getElementById('codeMessage').style.color = '#e74c3c';
+            }
+        }
+
+        // =====================================================================
         //  УПРАВЛЕНИЕ ОКНАМИ
         // =====================================================================
         const charModal = document.getElementById('charModal');
@@ -1756,7 +1748,6 @@
                 e.target.classList.add('active');
                 currentStatTab = e.target.dataset.tab;
                 updateStatPanel();
-                // Если настройки, показываем панель
                 if (currentStatTab === 'settings') {
                     document.getElementById('settingsPanel').style.display = 'block';
                 } else {
@@ -1806,7 +1797,7 @@
         addLog(`👋 Привет, ${player.name}!`, 'info');
 
         window.addEventListener('beforeunload', ()=> saveGame());
-        console.log('RPG с настройками и кодом загружена.');
+        console.log('RPG полностью загружена!');
     </script>
 </body>
 </html>
