@@ -639,14 +639,14 @@
     </div>
 
     <script>
-                // =====================================================================
+            // =====================================================================
         //  ИНИЦИАЛИЗАЦИЯ TELEGRAM
         // =====================================================================
         const tg = window.Telegram.WebApp;
         tg.ready();
 
         // =====================================================================
-        //  ИГРОВОЕ СОСТОЯНИЕ (ПОЛНОЕ)
+        //  ИГРОВОЕ СОСТОЯНИЕ
         // =====================================================================
         let player = {
             name: "Герой",
@@ -690,31 +690,25 @@
         let iceArmorBonus = 0;
 
         // =====================================================================
-        //  СИСТЕМА ПРЕДМЕТОВ (РАСШИРЕННАЯ)
+        //  СИСТЕМА ПРЕДМЕТОВ
         // =====================================================================
         const itemTemplates = {
-            // Оружие (физическое)
             'Iron Sword': { type: 'weapon', name: 'Железный меч', attackBonus: 4, rarity: 'common', emoji: '⚔️' },
             'Steel Blade': { type: 'weapon', name: 'Стальной клинок', attackBonus: 8, defenseBonus: 1, rarity: 'rare', emoji: '🗡️' },
             'Crystal Sword': { type: 'weapon', name: 'Хрустальный меч', attackBonus: 12, critBonus: 5, rarity: 'epic', emoji: '🔮' },
             'Dragon Slayer': { type: 'weapon', name: 'Драконоборец', attackBonus: 20, critBonus: 10, rarity: 'legendary', emoji: '🐉' },
-            // Оружие (магическое)
             'Mage Staff': { type: 'weapon', name: 'Посох мага', magicAttackBonus: 5, rarity: 'rare', emoji: '🪄' },
             'Fire Wand': { type: 'weapon', name: 'Жезл огня', magicAttackBonus: 12, rarity: 'epic', emoji: '🔥' },
-            // Броня
             'Leather Armor': { type: 'armor', name: 'Кожаная броня', defenseBonus: 3, rarity: 'common', emoji: '🛡️' },
             'Chain Mail': { type: 'armor', name: 'Кольчуга', defenseBonus: 6, rarity: 'rare', emoji: '⛓️' },
             'Plate Armor': { type: 'armor', name: 'Латный доспех', defenseBonus: 10, hpBonus: 10, rarity: 'epic', emoji: '🛡️' },
             'Mithril Armor': { type: 'armor', name: 'Мифриловая броня', defenseBonus: 15, hpBonus: 20, rarity: 'legendary', emoji: '✨' },
-            // Аксессуары (физические)
             'Ring of Strength': { type: 'accessory', name: 'Кольцо силы', attackBonus: 3, rarity: 'common', emoji: '💍' },
             'Amulet of Protection': { type: 'accessory', name: 'Амулет защиты', defenseBonus: 3, rarity: 'rare', emoji: '📿' },
             'Crystal Amulet': { type: 'accessory', name: 'Хрустальный амулет', attackBonus: 5, defenseBonus: 5, rarity: 'epic', emoji: '💎' },
             'Phoenix Feather': { type: 'accessory', name: 'Перо Феникса', hpBonus: 15, rarity: 'legendary', emoji: '🔥' },
-            // Аксессуары (магические)
             'Magic Amulet': { type: 'accessory', name: 'Амулет магии', magicAttackBonus: 5, rarity: 'rare', emoji: '🔮' },
             'Magic Ring': { type: 'accessory', name: 'Кольцо магии', magicAttackBonus: 3, rarity: 'common', emoji: '💍' },
-            // Зелья
             'Health Potion': { type: 'potion', name: 'Зелье здоровья', healAmount: 15, rarity: 'common', emoji: '🧪' },
             'Greater Potion': { type: 'potion', name: 'Большое зелье', healAmount: 35, rarity: 'rare', emoji: '🧪' },
         };
@@ -766,7 +760,7 @@
         }
 
         // =====================================================================
-        //  ФУНКЦИИ РАСЧЁТА (С УЧЁТОМ НОВЫХ БОНУСОВ)
+        //  ФУНКЦИИ РАСЧЁТА
         // =====================================================================
         function getXpToNext(level) {
             if (level >= 100) return Infinity;
@@ -836,13 +830,12 @@
             return { magicCritMultBonus, magicDodgeBonus };
         }
 
-                function getPhysicalBonuses(strength, agility, constitution, luck) {
+        function getPhysicalBonuses(strength, agility, constitution, luck) {
             const physAttack = 5 + Math.floor(strength * 0.5);
             const physCritChance = 5 + agility * 0.3 + luck * 0.2;
             const physCritMult = 150 + luck * 1;
-            // Основной бонус здоровья от телосложения: 3 за очко
             let maxHp = 20 + constitution * 3;
-            // Дополнительный бонус: +4 HP за каждые 2 очка телосложения
+            // Дополнительный бонус HP: +4 за каждые 2 очка телосложения
             maxHp += Math.floor(constitution / 2) * 4;
             const physDefense = 2 + Math.floor(constitution * 0.5);
             const physDodge = 5 + agility * 0.5;
@@ -905,7 +898,7 @@
                 magicAttack += eq.accessory.magicAttackBonus || 0;
             }
 
-            // ЛИНЕЙНЫЕ БОНУСЫ ОТ ХАРАКТЕРИСТИК
+            // Линейные бонусы от характеристик
             attack += Math.floor(player.strength / 2);
             magicAttack += Math.floor(player.intelligence / 2);
 
@@ -1105,20 +1098,10 @@
         }
 
         // =====================================================================
-        //  МОДАЛ ХАРАКТЕРИСТИК (ЗВЕЗДА)
+        //  МОДАЛ ХАРАКТЕРИСТИК (ЗВЕЗДА) — С ПОДДЕРЖКОЙ ЗАЖАТИЯ
         // =====================================================================
-        function openStatsModal() {
-            document.getElementById('statsModal').classList.add('active');
-            renderBigHexagram();
-            document.getElementById('statPointsBig').textContent = player.statPoints;
-            document.body.style.overflow = 'hidden';
-        }
-        function closeStatsModal() {
-            document.getElementById('statsModal').classList.remove('active');
-            document.body.style.overflow = '';
-        }
-        
-                // Обновляет значения и состояние кнопок в звёзде без пересоздания DOM
+
+        // Вспомогательная функция обновления значений в звёзде без перерисовки
         function updateStatNodes() {
             const nodes = document.querySelectorAll('#hexagramBig .stat-node-big');
             nodes.forEach(node => {
@@ -1137,8 +1120,8 @@
             });
             document.getElementById('statPointsBig').textContent = player.statPoints;
         }
-        
-                function renderBigHexagram() {
+
+        function renderBigHexagram() {
             const container = document.getElementById('hexagramBig');
             const stats = [
                 { key:'intelligence', label:'Интеллект', color:'#8e44ad' },
@@ -1190,12 +1173,12 @@
                 container.appendChild(node);
             });
 
-            // ---- НОВЫЙ ОБРАБОТЧИК С ЗАЖАТИЕМ ----
+            // ---- ОБРАБОТЧИКИ С ЗАЖАТИЕМ ----
             document.querySelectorAll('#hexagramBig .stat-plus').forEach(btn => {
                 let intervalId = null;
                 let isHeld = false;
 
-                               function increaseStat() {
+                function increaseStat() {
                     const statKey = btn.dataset.stat;
                     if (player.statPoints > 0 && player[statKey] < 100) {
                         player[statKey]++;
@@ -1204,41 +1187,15 @@
                         saveGame();
                         updateMainUI();
                         updateCharWindow();
-                        updateStatNodes(); // ← вот это вместо renderBigHexagram
+                        updateStatNodes(); // обновляем значения без перерисовки
                         addLog(`⬆ ${statKey} увеличена до ${player[statKey]}`, 'info');
                     }
                 }
-                        
-                        // Перерисовываем полностью (это сбросит текущие обработчики, но они будут назначены заново)
-                        // Чтобы не потерять зажатие, лучше перерисовать только значения.
-                        // В целях простоты я пересоздам всю звезду заново, но остановлю удержание.
-                        // Мы можем просто обновить текст и кнопки без пересоздания всей структуры.
-                        // Но так как мы уже внутри обработчика, который был привязан к старой кнопке, после перерисовки эта кнопка исчезнет.
-                        // Поэтому я предлагаю обновлять только текст и disabled состояние без полной перерисовки.
-                        // Сделаем так: обновляем текущий узел и все остальные, не пересоздавая всю звезду.
-                        // Но для простоты я оставлю вызов renderBigHexagram, но перед этим остановим интервал.
-                        // Чтобы избежать проблем, мы переопределим обработчики заново после перерисовки.
-                        // Это сработает, но если держать кнопку, то после первого повышения она отпустится.
-                        // Для комфортного зажатия лучше обновлять только цифры и состояние кнопок.
-                        // Я применю другой подход: не буду перерисовывать всю звезду, а только обновлю значения и disabled.
-                        // Так мы сохраним привязку обработчиков.
-                        // Поэтому я переписал функцию так, чтобы она не вызывала renderBigHexagram полностью.
-                        // Вместо этого я обновляю значения в существующих узлах.
-                        // Для этого я сохраню ссылки на узлы.
-                        // Проще: я перепишу renderBigHexagram так, чтобы она не удаляла и не создавала заново кнопки, а обновляла их содержимое.
-                        // Это потребует значительных изменений, поэтому я применю костыль: при каждом клике (зажатии) мы будем обновлять только цифры.
-                        // Для этого после изменения stat мы вызовем функцию updateStatNodes(), которая обновит все цифры и состояния кнопок без перерисовки.
-                        // Ниже я добавлю такую функцию.
-                    }
-                }
 
-                // Обработчики мыши
                 btn.addEventListener('mousedown', function(e) {
                     if (this.disabled) return;
                     isHeld = true;
-                    // Сразу выполняем одно повышение
                     increaseStat();
-                    // Запускаем интервал
                     intervalId = setInterval(() => {
                         if (!isHeld) {
                             clearInterval(intervalId);
@@ -1265,7 +1222,6 @@
                     }
                 });
 
-                // Для мобильных устройств (touch)
                 btn.addEventListener('touchstart', function(e) {
                     e.preventDefault();
                     if (this.disabled) return;
@@ -1299,6 +1255,17 @@
                     }
                 });
             });
+        }
+
+        function openStatsModal() {
+            document.getElementById('statsModal').classList.add('active');
+            renderBigHexagram();
+            document.getElementById('statPointsBig').textContent = player.statPoints;
+            document.body.style.overflow = 'hidden';
+        }
+        function closeStatsModal() {
+            document.getElementById('statsModal').classList.remove('active');
+            document.body.style.overflow = '';
         }
 
         // =====================================================================
@@ -1526,14 +1493,11 @@
             return { name, hp, maxHp: hp, attack, defense, xpReward };
         }
 
-        // Основная функция выполнения действия (атака, защита, ледяная броня)
         function performAction(action) {
-            // Если врага нет – создаём
             if (!enemy) {
                 enemy = generateEnemy();
                 addLog(`⚔️ Вы встретили ${enemy.name} (HP: ${enemy.hp})`, 'info');
                 updateMainUI();
-                // После создания врага сразу выполняем атаку тем же действием
                 if (enemy) {
                     executeAction(action);
                 }
@@ -1583,7 +1547,6 @@
                     critChance = player.magicCritChance;
                     attackName = 'Огненный шар';
                 } else if (action === 'ice') {
-                    // Ледяная броня – защитное заклинание
                     const spellLevel = player.spells.ice_armor || 0;
                     iceArmorBonus = 3 * spellLevel;
                     isIceArmor = true;
@@ -1601,14 +1564,12 @@
                 }
             }
 
-            // Крит
             let isCrit = false;
             if (Math.random() * 100 < critChance) {
                 isCrit = true;
                 damage = Math.floor(damage * (critMult / 100));
             }
 
-            // Если защита, снижаем урон
             if (isDefending) {
                 damage = Math.floor(damage * 0.5);
                 isDefending = false;
@@ -1630,7 +1591,6 @@
             updateMainUI();
         }
 
-        // Ход врага
         function enemyTurn() {
             if (!enemy) return;
             let enemyHits = true;
@@ -1640,10 +1600,9 @@
             }
             if (enemyHits) {
                 let actualDefense = player.defense;
-                // Если активна ледяная броня, добавляем бонус к защите
                 if (isIceArmor) {
                     actualDefense += iceArmorBonus;
-                    isIceArmor = false; // сбрасываем после одного использования
+                    isIceArmor = false;
                     addLog(`❄️ Ледяная броня увеличила защиту до ${actualDefense}`, 'info');
                 }
                 let enemyDamage = Math.max(1, enemy.attack - Math.floor(actualDefense * 0.5) + Math.floor(Math.random() * 2));
@@ -1667,7 +1626,6 @@
             updateCharWindow();
         }
 
-        // Победа
         function victory() {
             if (player.level < 100) {
                 const xpGain = enemy.xpReward;
@@ -1716,7 +1674,6 @@
         //  ОБРАБОТЧИКИ КНОПОК
         // =====================================================================
 
-        // Атаки (перенаправляем на performAction)
         document.getElementById('btnAttack1').addEventListener('click', function() {
             const action = this.dataset.action || 'normal';
             performAction(action);
@@ -1730,7 +1687,6 @@
             performAction(action);
         });
 
-        // Лечение
         function healAction() {
             if (player.hp <= 0) { addLog('Вы мертвы!', 'damage'); return; }
             const healPower = 5 + player.level * 2 + (player.spells.heal || 0) * 2 + Math.random() * 5;
@@ -1742,7 +1698,6 @@
         }
         document.getElementById('btnHeal').addEventListener('click', healAction);
 
-        // Побег
         function fleeAction() {
             if (!enemy) { addLog('Нет врага.', 'info'); return; }
             if (Math.random() < 0.5) {
@@ -1769,7 +1724,6 @@
         }
         document.getElementById('btnFlee').addEventListener('click', fleeAction);
 
-        // Сброс игры
         function resetGame() {
             if (confirm('Начать заново?')) {
                 player = {
@@ -1815,9 +1769,6 @@
         }
         document.getElementById('btnReset').addEventListener('click', resetGame);
 
-        // =====================================================================
-        //  КОД ДЛЯ 100 УРОВНЯ (обработчик в настройках)
-        // =====================================================================
         function applyCode(code) {
             if (code === 'Nikverlid2029') {
                 player.level = 100;
@@ -1857,7 +1808,6 @@
         });
         charModal.addEventListener('click', (e)=> { if (e.target===charModal) { charModal.classList.remove('active'); document.body.style.overflow=''; } });
 
-        // Переключение вкладок в персонаже
         document.getElementById('charTabs').addEventListener('click', function(e) {
             if (e.target.classList.contains('tab-btn')) {
                 document.querySelectorAll('#charTabs .tab-btn').forEach(b => b.classList.remove('active'));
@@ -1879,7 +1829,6 @@
         closeStatsBtn.addEventListener('click', closeStatsModal);
         statsModal.addEventListener('click', (e)=> { if (e.target===statsModal) closeStatsModal(); });
 
-        // Инвентарь
         document.getElementById('btnInventory').addEventListener('click', openInventory);
         document.getElementById('closeInventoryModal').addEventListener('click', closeInventory);
         document.getElementById('inventoryModal').addEventListener('click', (e)=> {
