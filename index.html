@@ -352,11 +352,154 @@
             border: 1px solid rgba(255,215,0,0.2);
         }
 
+        /* ---------- НАВЫКИ И ЗАКЛИНАНИЯ ---------- */
+        .skills-spells-section {
+            margin-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 16px;
+        }
+        .skills-spells-section .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .skills-spells-section .tab-btn {
+            flex: 1;
+            background: rgba(255,255,255,0.06);
+            border: none;
+            color: #aaa;
+            padding: 8px 0;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .skills-spells-section .tab-btn.active {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+        }
+        .tree-container {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(4px);
+            border-radius: 20px;
+            padding: 16px;
+            min-height: 150px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 16px;
+            transition: 0.3s;
+        }
+        .skill-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80px;
+            cursor: pointer;
+            position: relative;
+        }
+        .skill-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            border: 3px solid #555;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            transition: 0.2s;
+            position: relative;
+        }
+        .skill-circle .level-badge {
+            position: absolute;
+            bottom: -6px;
+            right: -6px;
+            background: #000;
+            color: #fff;
+            border-radius: 30px;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: 700;
+            border: 1px solid #f1c40f;
+        }
+        .skill-circle .level-badge.max {
+            background: #f1c40f;
+            color: #000;
+            border-color: #000;
+        }
+        .skill-circle .plus-icon {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #2ecc71;
+            color: #fff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 14px;
+            font-weight: 700;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #fff;
+        }
+        .skill-node:hover .skill-circle {
+            border-color: #f1c40f;
+            transform: scale(1.05);
+        }
+        .skill-node:hover .plus-icon {
+            display: flex;
+        }
+        .skill-node .skill-name {
+            margin-top: 6px;
+            font-size: 12px;
+            color: #ccc;
+            text-align: center;
+            line-height: 1.2;
+            max-width: 80px;
+        }
+        .skill-tooltip {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            white-space: nowrap;
+            max-width: 200px;
+            white-space: normal;
+            border: 1px solid #f1c40f;
+            z-index: 10;
+            pointer-events: none;
+            margin-bottom: 8px;
+        }
+        .skill-node:hover .skill-tooltip {
+            display: block;
+        }
+        .skill-points-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 8px;
+            padding: 0 4px;
+        }
+        .skill-points-display span { color: #f1c40f; font-weight: 700; }
+
         @media (max-width: 600px) {
             .char-grid { grid-template-columns: 1fr; gap: 12px; }
             .stat-node-big { font-size: 12px; padding: 6px 8px; min-width: 60px; }
             .stat-node-big .stat-val { font-size: 16px; }
             .stat-node-big .stat-plus { width: 24px; height: 24px; font-size: 16px; }
+            .skill-circle { width: 60px; height: 60px; font-size: 24px; }
+            .skill-node { width: 70px; }
         }
     </style>
 </head>
@@ -429,6 +572,21 @@
                     </div>
                 </div>
             </div>
+
+            <!-- === БЛОК НАВЫКОВ И ЗАКЛИНАНИЙ === -->
+            <div class="skills-spells-section">
+                <div class="tabs" id="skillsSpellsTabs">
+                    <button class="tab-btn active" data-tab="skills">⚔️ Навыки</button>
+                    <button class="tab-btn" data-tab="spells">🔮 Заклинания</button>
+                </div>
+                <div class="skill-points-display">
+                    <span>Очки навыков: <span id="skillPointsDisplay">0</span></span>
+                    <span>Очки заклинаний: <span id="spellPointsDisplay">0</span></span>
+                </div>
+                <div class="tree-container" id="treeContainer">
+                    <!-- Содержимое генерируется JS -->
+                </div>
+            </div>
         </div>
     </div>
 
@@ -473,7 +631,12 @@
             statPoints: 0,
             magicAttack: 5,
             magicCritChance: 0,
-            magicDodge: 0
+            magicDodge: 0,
+            // Навыки и заклинания
+            skillPoints: 0,
+            spellPoints: 0,
+            skills: {},    // { skillId: level }
+            spells: {}     // { spellId: level }
         };
         let enemy = null;
 
@@ -599,7 +762,11 @@
                 if (data) {
                     const parsed = JSON.parse(data);
                     player = parsed;
-                    const defaults = { intelligence:1, wisdom:1, strength:1, agility:1, constitution:1, luck:1, statPoints:0 };
+                    const defaults = {
+                        intelligence:1, wisdom:1, strength:1, agility:1, constitution:1, luck:1,
+                        statPoints:0, skillPoints:0, spellPoints:0,
+                        skills:{}, spells:{}
+                    };
                     for (let key in defaults) if (player[key]===undefined) player[key]=defaults[key];
                     recalcStats();
                 }
@@ -629,7 +796,7 @@
         }
 
         // =====================================================================
-        //  ОКНО ПЕРСОНАЖА
+        //  ОКНО ПЕРСОНАЖА – СТАТИСТИКА
         // =====================================================================
         function updateCharWindow() {
             const level = player.level;
@@ -640,6 +807,11 @@
             document.getElementById('levelBadge').textContent = `Ур. ${level} (${labels[tier]})`;
             updateStatPanel();
             document.getElementById('statPointsDisplay').textContent = player.statPoints;
+            // Очки навыков/заклинаний
+            document.getElementById('skillPointsDisplay').textContent = player.skillPoints;
+            document.getElementById('spellPointsDisplay').textContent = player.spellPoints;
+            // Обновить дерево
+            renderTree(currentTreeTab);
         }
 
         let currentStatTab = 'magic';
@@ -673,7 +845,7 @@
         }
 
         // =====================================================================
-        //  МОДАЛ ХАРАКТЕРИСТИК – ЗВЕЗДА
+        //  МОДАЛ ХАРАКТЕРИСТИК (ЗВЕЗДА)
         // =====================================================================
         function openStatsModal() {
             document.getElementById('statsModal').classList.add('active');
@@ -761,6 +933,92 @@
         }
 
         // =====================================================================
+        //  НАВЫКИ И ЗАКЛИНАНИЯ – ДЕРЕВО
+        // =====================================================================
+        // Определения навыков и заклинаний
+        const skillsData = [
+            { id: 'power_strike', name: 'Силовой удар', icon: '💪', desc: 'Увеличивает физ. атаку на 2 за уровень' },
+            { id: 'iron_skin', name: 'Железная кожа', icon: '🛡️', desc: 'Увеличивает защиту на 1 за уровень' },
+            { id: 'agility', name: 'Проворство', icon: '💨', desc: 'Увеличивает уклонение на 2% за уровень' },
+            { id: 'precision', name: 'Точный удар', icon: '🎯', desc: 'Увеличивает шанс крита на 2% за уровень' },
+            { id: 'bloodthirst', name: 'Кровожадность', icon: '🩸', desc: 'Восстанавливает 2 HP после победы (пока не реализовано)' }
+        ];
+
+        const spellsData = [
+            { id: 'fireball', name: 'Огненный шар', icon: '🔥', desc: 'Увеличивает маг. атаку на 3 за уровень' },
+            { id: 'ice_armor', name: 'Ледяная броня', icon: '❄️', desc: 'Увеличивает маг. уклонение на 2% за уровень' },
+            { id: 'lightning', name: 'Молния', icon: '⚡', desc: 'Увеличивает шанс маг. крита на 2% за уровень' },
+            { id: 'heal', name: 'Исцеление', icon: '💚', desc: 'Увеличивает лечение на 2 HP за уровень' },
+            { id: 'shield', name: 'Щит', icon: '🛡️', desc: 'Увеличивает маг. защиту (пока не реализовано)' }
+        ];
+
+        let currentTreeTab = 'skills';
+
+        function renderTree(tab) {
+            const container = document.getElementById('treeContainer');
+            const data = tab === 'skills' ? skillsData : spellsData;
+            const points = tab === 'skills' ? player.skillPoints : player.spellPoints;
+            const storage = tab === 'skills' ? player.skills : player.spells;
+
+            let html = '';
+            data.forEach(item => {
+                const level = storage[item.id] || 0;
+                const maxed = level >= 5;
+                const canUp = !maxed && points > 0;
+                const tooltipText = `${item.desc}\nУровень: ${level}/5`;
+
+                html += `
+                    <div class="skill-node" data-id="${item.id}" data-tab="${tab}">
+                        <div class="skill-circle" style="${maxed ? 'border-color: #f1c40f;' : ''}">
+                            ${item.icon}
+                            <span class="level-badge ${maxed ? 'max' : ''}">${level}/5</span>
+                            ${canUp ? '<span class="plus-icon">+</span>' : ''}
+                        </div>
+                        <div class="skill-name">${item.name}</div>
+                        <div class="skill-tooltip">${tooltipText}</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            // Обработчики кликов по узлам
+            container.querySelectorAll('.skill-node').forEach(node => {
+                node.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    const tab = this.dataset.tab;
+                    const storage = tab === 'skills' ? player.skills : player.spells;
+                    const points = tab === 'skills' ? player.skillPoints : player.spellPoints;
+                    const level = storage[id] || 0;
+
+                    if (level < 5 && points > 0) {
+                        storage[id] = (storage[id] || 0) + 1;
+                        if (tab === 'skills') player.skillPoints--;
+                        else player.spellPoints--;
+                        saveGame();
+                        updateCharWindow();  // обновит всё
+                        // Можно также применить эффекты к характеристикам (пока не делаем)
+                        addLog(`⬆ ${tab === 'skills' ? 'Навык' : 'Заклинание'} ${id} повышен до ${storage[id]}`, 'info');
+                    } else if (level >= 5) {
+                        addLog(`Этот навык уже максимального уровня.`, 'info');
+                    } else {
+                        addLog(`Недостаточно очков.`, 'info');
+                    }
+                });
+            });
+        }
+
+        // Переключение вкладок навыков/заклинаний
+        document.getElementById('skillsSpellsTabs').addEventListener('click', function(e) {
+            if (e.target.classList.contains('tab-btn')) {
+                document.querySelectorAll('#skillsSpellsTabs .tab-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentTreeTab = e.target.dataset.tab;
+                renderTree(currentTreeTab);
+            }
+        });
+
+        // =====================================================================
         //  БОЕВАЯ МЕХАНИКА
         // =====================================================================
         function generateEnemy() {
@@ -800,8 +1058,11 @@
                     while (player.level < 100 && player.xp >= player.xpToNext) {
                         player.xp -= player.xpToNext;
                         player.level++;
+                        // Начисляем очки за уровень
                         player.statPoints += 2;
-                        addLog(`🎉 УРОВЕНЬ ${player.level}! +2 очка характеристик!`, 'loot');
+                        player.skillPoints += 1;
+                        player.spellPoints += 1;
+                        addLog(`🎉 УРОВЕНЬ ${player.level}! +2 очка характеристик, +1 навык, +1 заклинание!`, 'loot');
                         player.xpToNext = getXpToNext(player.level);
                     }
                     if (player.level === 100) {
@@ -900,7 +1161,11 @@
                     statPoints: 0,
                     magicAttack: 5,
                     magicCritChance: 0,
-                    magicDodge: 0
+                    magicDodge: 0,
+                    skillPoints: 0,
+                    spellPoints: 0,
+                    skills: {},
+                    spells: {}
                 };
                 enemy = null;
                 recalcStats();
@@ -936,9 +1201,10 @@
         closeStatsBtn.addEventListener('click', closeStatsModal);
         statsModal.addEventListener('click', (e)=> { if (e.target===statsModal) closeStatsModal(); });
 
-        document.querySelectorAll('.tab-btn').forEach(btn => {
+        // Переключение вкладок статистики (Магия/Физика)
+        document.querySelectorAll('.stat-panel .tab-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.stat-panel .tab-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 currentStatTab = this.dataset.tab;
                 updateStatPanel();
@@ -959,7 +1225,7 @@
         document.getElementById('btnReset').addEventListener('click', resetGame);
 
         window.addEventListener('beforeunload', ()=> saveGame());
-        console.log('RPG с новой звёздной картой загружена!');
+        console.log('RPG с навыками и заклинаниями загружена!');
     </script>
 </body>
 </html>
