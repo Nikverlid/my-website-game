@@ -6,8 +6,7 @@
     <title>War of the Virtuosos</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Все стили без изменений (они уже были в предыдущем ответе) */
-        /* ... (полный код стилей тот же, что и в прошлом сообщении) ... */
+        /* ===== Все стили (как в предыдущей версии) ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: linear-gradient(145deg, #0b0b1a, #1a1a2e); color: #eee; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px; }
         .game-container { max-width: 480px; width: 100%; background: rgba(255,255,255,0.04); backdrop-filter: blur(8px); border-radius: 36px; padding: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.06); }
@@ -34,6 +33,23 @@
         .btn-char:active { background: #6c3483; }
         .btn-reset { background: #e67e22; grid-column: span 2; }
         .btn-reset:active { background: #d35400; }
+
+        /* Контейнер для выбора атаки (появляется по необходимости) */
+        .attack-choice {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .attack-choice.active {
+            display: grid;
+        }
+        .btn-attack-phys { background: #e67e22; }
+        .btn-attack-phys:active { background: #d35400; }
+        .btn-attack-magic { background: #8e44ad; }
+        .btn-attack-magic:active { background: #6c3483; }
+
+        /* Модальные окна и остальные стили (без изменений) */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
         .modal-overlay.active { display: flex; }
         .modal { background: linear-gradient(145deg, #1e1e32, #12121f); border-radius: 36px; max-width: 750px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 24px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 30px 60px rgba(0,0,0,0.9); position: relative; }
@@ -94,7 +110,7 @@
 </head>
 <body>
 
-    <!-- ОСНОВНОЙ ЭКРАН -->
+    <!-- ===== ОСНОВНОЙ ЭКРАН ===== -->
     <div class="game-container" id="gameContainer">
         <h1>⚔️ War of Virtuosos</h1>
         <div class="top-status">
@@ -106,7 +122,15 @@
             <div class="log-entry info">Добро пожаловать в RPG!</div>
             <div class="log-entry info">Используйте кнопки внизу.</div>
         </div>
-        <div class="button-grid">
+
+        <!-- Кнопки выбора атаки (появляются по необходимости) -->
+        <div class="attack-choice" id="attackChoice">
+            <button class="btn btn-attack-phys" id="btnPhysAttack">⚔️ Физ. атака</button>
+            <button class="btn btn-attack-magic" id="btnMagicAttack">🧙 Маг. атака</button>
+        </div>
+
+        <!-- Основные кнопки действий -->
+        <div class="button-grid" id="mainButtons">
             <button class="btn btn-attack" id="btnFight">⚔️ Сражаться</button>
             <button class="btn btn-heal" id="btnHeal">💚 Лечиться</button>
             <button class="btn btn-flee" id="btnFlee">🏃 Сбежать</button>
@@ -115,7 +139,7 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ПЕРСОНАЖА -->
+    <!-- ===== МОДАЛЬНОЕ ОКНО ПЕРСОНАЖА ===== -->
     <div class="modal-overlay" id="charModal">
         <div class="modal">
             <button class="modal-close" id="closeCharModal">✕</button>
@@ -179,7 +203,7 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ХАРАКТЕРИСТИК -->
+    <!-- ===== МОДАЛЬНОЕ ОКНО ХАРАКТЕРИСТИК ===== -->
     <div class="stats-modal-overlay" id="statsModal">
         <div class="stats-modal">
             <button class="stats-modal-close" id="closeStatsModal">✕</button>
@@ -227,9 +251,10 @@
             spells: {}
         };
         let enemy = null;
+        let isChoosingAttack = false; // флаг, показываем ли выбор атаки
 
         // =====================================================================
-        //  ФУНКЦИИ РАСЧЁТА
+        //  ФУНКЦИИ РАСЧЁТА (без изменений)
         // =====================================================================
         function getXpToNext(level) {
             if (level >= 100) return Infinity;
@@ -316,11 +341,7 @@
             };
         }
 
-        // =====================================================================
-        //  ПЕРЕСЧЁТ ВСЕХ СТАТОВ С УЧЁТОМ НАВЫКОВ И ЗАКЛИНАНИЙ
-        // =====================================================================
         function recalcStats() {
-            // 1. Базовые от интеллекта/мудрости и физических характеристик
             const intel = getIntellectBonuses(player.intelligence);
             const wis = getWisdomBonuses(player.wisdom);
             const baseMagicAttack = 5;
@@ -337,23 +358,20 @@
             let critMult = phys.physCritMult;
             let dodge = phys.physDodge;
 
-            // 2. Бонусы от навыков
+            // Навыки
             const skillLevel = (id) => player.skills[id] || 0;
             attack += skillLevel('power_strike') * 2;
             defense += skillLevel('iron_skin') * 1;
             dodge += skillLevel('agility') * 2;
             critChance += skillLevel('precision') * 2;
-            // Кровожадность не влияет на статы, она в отдельной логике
 
-            // 3. Бонусы от заклинаний
+            // Заклинания
             const spellLevel = (id) => player.spells[id] || 0;
             magicAttack += spellLevel('fireball') * 3;
             magicDodge += spellLevel('ice_armor') * 2;
             magicCritChance += spellLevel('lightning') * 2;
-            defense += spellLevel('shield') * 1; // Щит даёт +1 защиты за уровень
-            // Исцеление влияет на лечение, его учтём в heal()
+            defense += spellLevel('shield') * 1;
 
-            // Сохраняем в player
             player.attack = attack;
             player.defense = defense;
             player.maxHp = maxHp;
@@ -461,7 +479,7 @@
         }
 
         // =====================================================================
-        //  МОДАЛ ХАРАКТЕРИСТИК
+        //  МОДАЛ ХАРАКТЕРИСТИК (без изменений)
         // =====================================================================
         function openStatsModal() {
             document.getElementById('statsModal').classList.add('active');
@@ -473,7 +491,6 @@
             document.getElementById('statsModal').classList.remove('active');
             document.body.style.overflow = '';
         }
-
         function renderBigHexagram() {
             const container = document.getElementById('hexagramBig');
             const stats = [
@@ -493,7 +510,6 @@
                     <polygon points="50,5 75,35 65,35 90,70 70,70 50,95 30,70 10,70 35,35 25,35"
                              fill="rgba(0,0,0,0.15)" stroke="#000" stroke-width="2.5" />
             `;
-
             stats.forEach((s, i) => {
                 const angle = angles[i] * Math.PI / 180;
                 const x = cx + r * Math.cos(angle);
@@ -501,7 +517,6 @@
                 svg += `<line x1="50" y1="50" x2="${x}" y2="${y}" stroke="${s.color}" stroke-width="2.5" />`;
                 svg += `<circle cx="${x}" cy="${y}" r="3.5" fill="${s.color}" stroke="#fff" stroke-width="1" />`;
             });
-
             svg += `</svg>`;
             container.innerHTML = svg;
 
@@ -513,14 +528,12 @@
                 const val = player[s.key];
                 const maxed = val >= 100;
                 const canUp = player.statPoints > 0 && !maxed;
-
                 const node = document.createElement('div');
                 node.className = 'stat-node-big';
                 node.style.left = x + '%';
                 node.style.top = y + '%';
                 node.style.borderColor = s.color;
                 node.style.background = 'rgba(0,0,0,0.85)';
-
                 node.innerHTML = `
                     <span class="stat-label" style="color:${s.color};">${s.label}</span>
                     <span class="stat-val">${val}</span>
@@ -549,7 +562,7 @@
         }
 
         // =====================================================================
-        //  НАВЫКИ И ЗАКЛИНАНИЯ – ДЕРЕВО (с описанием эффектов)
+        //  НАВЫКИ И ЗАКЛИНАНИЯ (без изменений)
         // =====================================================================
         const skillsData = [
             { id: 'power_strike', name: 'Силовой удар', icon: '💪', desc: '+2 к физ. атаке за уровень' },
@@ -558,7 +571,6 @@
             { id: 'precision', name: 'Точный удар', icon: '🎯', desc: '+2% к шансу крита за уровень' },
             { id: 'bloodthirst', name: 'Кровожадность', icon: '🩸', desc: 'восстанавливает 2 HP после победы за уровень' }
         ];
-
         const spellsData = [
             { id: 'fireball', name: 'Огненный шар', icon: '🔥', desc: '+3 к маг. атаке за уровень' },
             { id: 'ice_armor', name: 'Ледяная броня', icon: '❄️', desc: '+2% к маг. уклонению за уровень' },
@@ -568,7 +580,6 @@
         ];
 
         let currentTreeTab = 'skills';
-
         function renderTree(tab) {
             const container = document.getElementById('treeContainer');
             const data = tab === 'skills' ? skillsData : spellsData;
@@ -581,7 +592,6 @@
                 const maxed = level >= 5;
                 const canUp = !maxed && points > 0;
                 const tooltipText = `${item.desc}\nУровень: ${level}/5`;
-
                 html += `
                     <div class="skill-node" data-id="${item.id}" data-tab="${tab}">
                         <div class="skill-circle" style="${maxed ? 'border-color: #f1c40f;' : ''}">
@@ -594,7 +604,6 @@
                     </div>
                 `;
             });
-
             container.innerHTML = html;
 
             container.querySelectorAll('.skill-node').forEach(node => {
@@ -604,14 +613,13 @@
                     const storage = tab === 'skills' ? player.skills : player.spells;
                     const points = tab === 'skills' ? player.skillPoints : player.spellPoints;
                     const level = storage[id] || 0;
-
                     if (level < 5 && points > 0) {
                         storage[id] = (storage[id] || 0) + 1;
                         if (tab === 'skills') player.skillPoints--;
                         else player.spellPoints--;
-                        recalcStats(); // пересчитываем все бонусы
+                        recalcStats();
                         saveGame();
-                        updateCharWindow(); // обновляем UI
+                        updateCharWindow();
                         addLog(`⬆ ${tab === 'skills' ? 'Навык' : 'Заклинание'} ${id} повышен до ${storage[id]}`, 'info');
                     } else if (level >= 5) {
                         addLog(`Этот навык уже максимального уровня.`, 'info');
@@ -622,7 +630,6 @@
             });
         }
 
-        // Переключение вкладок навыков/заклинаний
         document.getElementById('skillsSpellsTabs').addEventListener('click', function(e) {
             if (e.target.classList.contains('tab-btn')) {
                 document.querySelectorAll('#skillsSpellsTabs .tab-btn').forEach(b => b.classList.remove('active'));
@@ -633,7 +640,7 @@
         });
 
         // =====================================================================
-        //  БОЕВАЯ МЕХАНИКА (с учётом кровожадности и исцеления)
+        //  БОЕВАЯ МЕХАНИКА С ВЫБОРОМ АТАКИ
         // =====================================================================
         function generateEnemy() {
             const levelScale = player.level;
@@ -646,24 +653,54 @@
             return { name, hp, maxHp: hp, attack, defense, xpReward };
         }
 
-        function fight() {
+        // Показать выбор атаки
+        function showAttackChoice() {
+            isChoosingAttack = true;
+            document.getElementById('attackChoice').classList.add('active');
+            document.getElementById('mainButtons').style.display = 'none';
+            addLog('Выберите тип атаки:', 'info');
+        }
+
+        // Скрыть выбор атаки
+        function hideAttackChoice() {
+            isChoosingAttack = false;
+            document.getElementById('attackChoice').classList.remove('active');
+            document.getElementById('mainButtons').style.display = 'grid';
+        }
+
+        // Выполнить атаку выбранным типом
+        function performAttack(type) {
             if (!enemy) {
-                enemy = generateEnemy();
-                addLog(`⚔️ Вы встретили ${enemy.name} (HP: ${enemy.hp})`, 'info');
-                updateMainUI();
+                hideAttackChoice();
                 return;
             }
-            let playerDamage = Math.max(1, player.attack - Math.floor(enemy.defense*0.5) + Math.floor(Math.random()*3));
-            let isCrit = false;
-            if (Math.random()*100 < player.critChance) {
-                isCrit = true;
-                playerDamage = Math.floor(playerDamage * (player.critMult/100));
+
+            let damage, critChance, critMult, attackName;
+            if (type === 'physical') {
+                damage = Math.max(1, player.attack - Math.floor(enemy.defense * 0.5) + Math.floor(Math.random() * 3));
+                critChance = player.critChance;
+                critMult = player.critMult;
+                attackName = 'физическую';
+            } else { // magic
+                damage = Math.max(1, player.magicAttack - Math.floor(enemy.defense * 0.5) + Math.floor(Math.random() * 3));
+                critChance = player.magicCritChance;
+                critMult = 150; // базовый множитель для магии (можно сделать отдельный параметр)
+                attackName = 'магическую';
             }
-            enemy.hp -= playerDamage;
-            let logMsg = `🗡️ Вы нанесли ${playerDamage} урона ${enemy.name}`;
+
+            // Проверка крита
+            let isCrit = false;
+            if (Math.random() * 100 < critChance) {
+                isCrit = true;
+                damage = Math.floor(damage * (critMult / 100));
+            }
+
+            enemy.hp -= damage;
+            let logMsg = `🗡️ Вы нанесли ${damage} урона (${attackName} атака)`;
             if (isCrit) logMsg += ' (КРИТ!)';
             addLog(logMsg, 'damage');
 
+            // Проверка победы
             if (enemy.hp <= 0) {
                 // Победа
                 if (player.level < 100) {
@@ -671,7 +708,7 @@
                     player.xp += xpGain;
                     addLog(`💀 ${enemy.name} повержен! +${xpGain} опыта`, 'loot');
 
-                    // ---- КРОВОЖАДНОСТЬ ----
+                    // Кровожадность
                     const bloodthirstLevel = player.skills.bloodthirst || 0;
                     if (bloodthirstLevel > 0) {
                         const healAmount = bloodthirstLevel * 2;
@@ -700,18 +737,19 @@
                 recalcStats();
                 updateMainUI();
                 updateCharWindow();
+                hideAttackChoice();
                 try { tg.sendData(JSON.stringify({ action:'victory', level:player.level })); } catch(e) {}
                 return;
             }
 
             // Атака врага
             let enemyHits = true;
-            if (Math.random()*100 < player.dodge) {
+            if (Math.random() * 100 < player.dodge) {
                 enemyHits = false;
                 addLog(`🌀 Вы уклонились от атаки ${enemy.name}!`, 'info');
             }
             if (enemyHits) {
-                let enemyDamage = Math.max(1, enemy.attack - Math.floor(player.defense*0.5) + Math.floor(Math.random()*2));
+                let enemyDamage = Math.max(1, enemy.attack - Math.floor(player.defense * 0.5) + Math.floor(Math.random() * 2));
                 player.hp -= enemyDamage;
                 addLog(`💢 ${enemy.name} наносит ${enemyDamage} урона`, 'damage');
                 if (player.hp <= 0) {
@@ -720,16 +758,40 @@
                     enemy = null;
                     updateMainUI();
                     updateCharWindow();
+                    hideAttackChoice();
                     return;
                 }
             }
+
             recalcStats();
             updateMainUI();
             updateCharWindow();
+            // Скрываем выбор, так как атака выполнена
+            hideAttackChoice();
             try { tg.sendData(JSON.stringify({ action:'fight', hp:player.hp })); } catch(e) {}
         }
 
-        // ---- ИСЦЕЛЕНИЕ (учёт заклинания) ----
+        // Обработчик кнопки "Сражаться"
+        function onFightClick() {
+            if (!enemy) {
+                enemy = generateEnemy();
+                addLog(`⚔️ Вы встретили ${enemy.name} (HP: ${enemy.hp})`, 'info');
+                updateMainUI();
+                return;
+            }
+            // Если враг есть, показываем выбор атаки
+            showAttackChoice();
+        }
+
+        // Обработчики кнопок выбора атаки
+        document.getElementById('btnPhysAttack').addEventListener('click', function() {
+            performAttack('physical');
+        });
+        document.getElementById('btnMagicAttack').addEventListener('click', function() {
+            performAttack('magic');
+        });
+
+        // Остальные боевые функции (heal, flee, reset) без изменений
         function heal() {
             if (player.hp <= 0) { addLog('Вы мертвы!','damage'); return; }
             const healPower = 5 + player.level * 2 + (player.spells.heal || 0) * 2 + Math.random() * 5;
@@ -745,6 +807,7 @@
             if (Math.random() < 0.5) {
                 addLog(`🏃 Сбежали от ${enemy.name}!`, 'info');
                 enemy = null;
+                hideAttackChoice();
             } else {
                 addLog(`😰 Не удалось сбежать!`, 'damage');
                 let enemyDamage = Math.max(1, enemy.attack - Math.floor(player.defense*0.5) + Math.floor(Math.random()*2));
@@ -757,6 +820,7 @@
                         player.hp = 0;
                         addLog(`💀 Вы погибли...`, 'damage');
                         enemy = null;
+                        hideAttackChoice();
                     }
                 }
                 updateMainUI();
@@ -794,6 +858,7 @@
                     spells: {}
                 };
                 enemy = null;
+                hideAttackChoice();
                 recalcStats();
                 updateMainUI();
                 updateCharWindow();
@@ -839,18 +904,19 @@
         // =====================================================================
         //  ЗАПУСК
         // =====================================================================
+        // Назначаем обработчики кнопок
+        document.getElementById('btnFight').addEventListener('click', onFightClick);
+        document.getElementById('btnHeal').addEventListener('click', heal);
+        document.getElementById('btnFlee').addEventListener('click', flee);
+        document.getElementById('btnReset').addEventListener('click', resetGame);
+
         loadGame();
         recalcStats();
         updateMainUI();
         addLog(`👋 Привет, ${player.name}!`, 'info');
 
-        document.getElementById('btnFight').addEventListener('click', fight);
-        document.getElementById('btnHeal').addEventListener('click', heal);
-        document.getElementById('btnFlee').addEventListener('click', flee);
-        document.getElementById('btnReset').addEventListener('click', resetGame);
-
         window.addEventListener('beforeunload', ()=> saveGame());
-        console.log('RPG с реализованными навыками и заклинаниями загружена!');
+        console.log('RPG с выбором атаки загружена!');
     </script>
 </body>
 </html>
