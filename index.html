@@ -6,13 +6,13 @@
     <title>War of the Virtuosos</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* ===== БАЗОВЫЕ СТИЛИ (как раньше, но с дополнениями) ===== */
+        /* ===== БАЗОВЫЕ СТИЛИ ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: linear-gradient(145deg, #0b0b1a, #1a1a2e); color: #eee; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px; }
         .game-container { max-width: 480px; width: 100%; background: rgba(255,255,255,0.04); backdrop-filter: blur(8px); border-radius: 36px; padding: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.06); }
         h1 { text-align: center; font-weight: 700; font-size: 22px; letter-spacing: 1px; background: linear-gradient(135deg, #f7971e, #ffd200); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 12px; }
 
-        /* ===== БОЕВОЙ ИНТЕРФЕЙС ===== */
+        /* ===== БОЕВАЯ ПАНЕЛЬ ===== */
         .battle-panel {
             background: rgba(0,0,0,0.4);
             border-radius: 20px;
@@ -75,6 +75,308 @@
             margin-bottom: 10px;
         }
         .action-row .btn { flex: 1; }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .button-grid .btn { grid-column: span 1; }
+        .button-grid .btn-full { grid-column: span 2; }
+
+        .btn {
+            padding: 12px 0;
+            border: none;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-heal { background: #2ecc71; }
+        .btn-heal:active { background: #27ae60; }
+        .btn-flee { background: #95a5a6; }
+        .btn-flee:active { background: #7f8c8d; }
+        .btn-char { background: #8e44ad; }
+        .btn-char:active { background: #6c3483; }
+        .btn-reset { background: #e67e22; }
+        .btn-reset:active { background: #d35400; }
+        .btn-inventory { background: #f39c12; }
+        .btn-inventory:active { background: #d68910; }
+
+        .log-area {
+            background: rgba(0,0,0,0.4);
+            border-radius: 16px;
+            padding: 10px 14px;
+            min-height: 70px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #ccc;
+            max-height: 110px;
+            overflow-y: auto;
+        }
+        .log-entry { margin-bottom: 3px; }
+        .log-entry.damage { color: #e74c3c; }
+        .log-entry.heal { color: #2ecc71; }
+        .log-entry.info { color: #85c1e9; }
+        .log-entry.loot { color: #f1c40f; }
+        .log-entry.drop { color: #9b59b6; }
+
+        /* ===== МОДАЛЬНЫЕ ОКНА ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: linear-gradient(145deg, #1e1e32, #12121f);
+            border-radius: 36px;
+            max-width: 750px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.9);
+            position: relative;
+        }
+        .modal-close {
+            position: sticky;
+            top: 0;
+            float: right;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            z-index: 10;
+        }
+        .modal-close:hover { background: #e74c3c; }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 16px;
+            align-items: start;
+            margin-top: 8px;
+        }
+        .stat-panel {
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 12px;
+        }
+        .stat-panel .tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .stat-panel .tab-btn {
+            flex: 1 0 auto;
+            background: rgba(255,255,255,0.06);
+            border: none;
+            color: #aaa;
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+        }
+        .stat-panel .tab-btn.active {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+        }
+        .stat-content {
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        .stat-content .row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 4px 0;
+        }
+        .stat-content .row .label { color: #aaa; }
+        .stat-content .row .val { color: #fff; font-weight: 600; }
+
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .frame-container {
+            position: relative;
+            width: 100%;
+            max-width: 200px;
+            aspect-ratio: 1/1;
+            margin-bottom: 8px;
+        }
+        .frame-container svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .frame-border {
+            fill: none;
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .shadow-ellipse { fill: rgba(0,0,0,0.3); }
+        .level-badge {
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 18px;
+            color: #fff;
+            white-space: nowrap;
+            border: 2px solid #f1c40f;
+        }
+
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .char-stats-btn {
+            background: #8e44ad;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 18px;
+            color: #fff;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            text-align: center;
+            margin-top: 8px;
+            width: 100%;
+        }
+        .char-stats-btn:hover { background: #6c3483; }
+
+        .stats-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(12px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .stats-modal-overlay.active { display: flex; }
+        .stats-modal {
+            background: radial-gradient(circle at center, #1a1a3a, #0b0b1a);
+            border-radius: 48px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            padding: 30px 24px 24px;
+            border: 2px solid rgba(255,215,0,0.15);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.9);
+            position: relative;
+        }
+        .stats-modal-close {
+            position: absolute;
+            top: 12px; right: 16px;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 28px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .stats-modal-close:hover { color: #e74c3c; }
+        .stats-modal h2 {
+            text-align: center;
+            color: #f1c40f;
+            font-weight: 700;
+            font-size: 22px;
+            margin-bottom: 16px;
+            letter-spacing: 2px;
+        }
+        .hexagram-big {
+            position: relative;
+            width: 100%;
+            max-width: 360px;
+            margin: 0 auto;
+            aspect-ratio: 1/1;
+        }
+        .hexagram-big svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .stat-node-big {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(0,0,0,0.85);
+            border-radius: 24px;
+            padding: 8px 12px;
+            border-width: 2px;
+            border-style: solid;
+            font-size: 14px;
+            transform: translate(-50%, -50%);
+            min-width: 80px;
+            text-align: center;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+        }
+        .stat-node-big .stat-label { font-weight: 600; font-size: 15px; }
+        .stat-node-big .stat-val { color: #fff; font-weight: 700; font-size: 20px; margin: 4px 0; }
+        .stat-node-big .stat-plus { background: #2ecc71; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 20px; font-weight: 700; color: #fff; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+        .stat-node-big .stat-plus:disabled { background: #555; cursor: not-allowed; opacity: 0.4; }
+        .stat-node-big .stat-plus:active { transform: scale(0.9); }
+        .stat-points-big { color: #f1c40f; font-weight: 700; font-size: 18px; text-align: center; margin-top: 16px; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 40px; border: 1px solid rgba(255,215,0,0.2); }
+
+        .skills-spells-section { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
+        .skills-spells-section .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+        .skills-spells-section .tab-btn { flex: 1; background: rgba(255,255,255,0.06); border: none; color: #aaa; padding: 8px 0; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; transition: 0.2s; }
+        .skills-spells-section .tab-btn.active { background: rgba(255,255,255,0.15); color: #fff; }
+        .tree-container { background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); border-radius: 20px; padding: 16px; min-height: 150px; display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; transition: 0.3s; }
+        .skill-node { display: flex; flex-direction: column; align-items: center; width: 80px; cursor: pointer; position: relative; }
+        .skill-circle { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 3px solid #555; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 28px; transition: 0.2s; position: relative; }
+        .skill-circle .level-badge { position: absolute; bottom: -6px; right: -6px; background: #000; color: #fff; border-radius: 30px; padding: 2px 8px; font-size: 12px; font-weight: 700; border: 1px solid #f1c40f; }
+        .skill-circle .level-badge.max { background: #f1c40f; color: #000; border-color: #000; }
+        .skill-circle .plus-icon { position: absolute; top: -6px; right: -6px; background: #2ecc71; color: #fff; border-radius: 50%; width: 20px; height: 20px; font-size: 14px; font-weight: 700; display: none; align-items: center; justify-content: center; border: 1px solid #fff; }
+        .skill-node:hover .skill-circle { border-color: #f1c40f; transform: scale(1.05); }
+        .skill-node:hover .plus-icon { display: flex; }
+        .skill-node .skill-name { margin-top: 6px; font-size: 12px; color: #ccc; text-align: center; line-height: 1.2; max-width: 80px; }
+        .skill-tooltip { display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); color: #fff; padding: 8px 12px; border-radius: 12px; font-size: 13px; white-space: normal; max-width: 200px; border: 1px solid #f1c40f; z-index: 10; pointer-events: none; margin-bottom: 8px; }
+        .skill-node:hover .skill-tooltip { display: block; }
+        .skill-points-display { display: flex; justify-content: space-between; font-size: 14px; color: #aaa; margin-bottom: 8px; padding: 0 4px; }
+        .skill-points-display span { color: #f1c40f; font-weight: 700; }
 
         /* ===== ИНВЕНТАРЬ ===== */
         .inventory-modal {
@@ -141,102 +443,60 @@
         .equipped-slots .slot .slot-label { color: #aaa; font-size: 11px; }
         .equipped-slots .slot .slot-item { font-weight: 600; color: #f1c40f; font-size: 13px; }
 
-        /* ===== МОДАЛЬНЫЕ ОКНА ===== (старые стили сохранены) ===== */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
-        .modal-overlay.active { display: flex; }
-        .modal { background: linear-gradient(145deg, #1e1e32, #12121f); border-radius: 36px; max-width: 750px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 24px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 30px 60px rgba(0,0,0,0.9); position: relative; }
-        .modal-close { position: sticky; top: 0; float: right; background: rgba(255,255,255,0.1); border: none; color: #fff; font-size: 24px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; z-index: 10; }
-        .modal-close:hover { background: #e74c3c; }
-        .char-grid { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 16px; align-items: start; margin-top: 8px; }
-        .stat-panel { background: rgba(0,0,0,0.3); border-radius: 20px; padding: 12px; }
-        .stat-panel .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
-        .stat-panel .tab-btn { flex: 1; background: rgba(255,255,255,0.06); border: none; color: #aaa; padding: 6px 0; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.2s; }
-        .stat-panel .tab-btn.active { background: rgba(255,255,255,0.15); color: #fff; }
-        .stat-content { font-size: 14px; line-height: 1.8; }
-        .stat-content .row { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 4px 0; }
-        .stat-content .row .label { color: #aaa; }
-        .stat-content .row .val { color: #fff; font-weight: 600; }
-        .center-panel { display: flex; flex-direction: column; align-items: center; }
-        .frame-container { position: relative; width: 100%; max-width: 200px; aspect-ratio: 1/1; margin-bottom: 8px; }
-        .frame-container svg { width: 100%; height: 100%; display: block; }
-        .frame-border { fill: none; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
-        .shadow-ellipse { fill: rgba(0,0,0,0.3); }
-        .level-badge { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 6px 16px; border-radius: 30px; font-weight: 700; font-size: 18px; color: #fff; white-space: nowrap; border: 2px solid #f1c40f; }
-        .right-panel { display: flex; flex-direction: column; align-items: stretch; }
-        .char-stats-btn { background: #8e44ad; border: none; border-radius: 30px; padding: 12px 18px; color: #fff; font-weight: 700; font-size: 16px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.4); text-align: center; margin-top: 8px; width: 100%; }
-        .char-stats-btn:hover { background: #6c3483; }
-        .stats-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(12px); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
-        .stats-modal-overlay.active { display: flex; }
-        .stats-modal { background: radial-gradient(circle at center, #1a1a3a, #0b0b1a); border-radius: 48px; max-width: 600px; width: 100%; max-height: 90vh; padding: 30px 24px 24px; border: 2px solid rgba(255,215,0,0.15); box-shadow: 0 30px 60px rgba(0,0,0,0.9); position: relative; }
-        .stats-modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; color: #fff; font-size: 28px; cursor: pointer; transition: 0.2s; }
-        .stats-modal-close:hover { color: #e74c3c; }
-        .stats-modal h2 { text-align: center; color: #f1c40f; font-weight: 700; font-size: 22px; margin-bottom: 16px; letter-spacing: 2px; }
-        .hexagram-big { position: relative; width: 100%; max-width: 360px; margin: 0 auto; aspect-ratio: 1/1; }
-        .hexagram-big svg { width: 100%; height: 100%; display: block; }
-        .stat-node-big { position: absolute; display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.85); border-radius: 24px; padding: 8px 12px; border-width: 2px; border-style: solid; font-size: 14px; transform: translate(-50%, -50%); min-width: 80px; text-align: center; backdrop-filter: blur(4px); box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
-        .stat-node-big .stat-label { font-weight: 600; font-size: 15px; }
-        .stat-node-big .stat-val { color: #fff; font-weight: 700; font-size: 20px; margin: 4px 0; }
-        .stat-node-big .stat-plus { background: #2ecc71; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 20px; font-weight: 700; color: #fff; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
-        .stat-node-big .stat-plus:disabled { background: #555; cursor: not-allowed; opacity: 0.4; }
-        .stat-node-big .stat-plus:active { transform: scale(0.9); }
-        .stat-points-big { color: #f1c40f; font-weight: 700; font-size: 18px; text-align: center; margin-top: 16px; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 40px; border: 1px solid rgba(255,215,0,0.2); }
-        .skills-spells-section { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
-        .skills-spells-section .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
-        .skills-spells-section .tab-btn { flex: 1; background: rgba(255,255,255,0.06); border: none; color: #aaa; padding: 8px 0; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; transition: 0.2s; }
-        .skills-spells-section .tab-btn.active { background: rgba(255,255,255,0.15); color: #fff; }
-        .tree-container { background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); border-radius: 20px; padding: 16px; min-height: 150px; display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; transition: 0.3s; }
-        .skill-node { display: flex; flex-direction: column; align-items: center; width: 80px; cursor: pointer; position: relative; }
-        .skill-circle { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 3px solid #555; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 28px; transition: 0.2s; position: relative; }
-        .skill-circle .level-badge { position: absolute; bottom: -6px; right: -6px; background: #000; color: #fff; border-radius: 30px; padding: 2px 8px; font-size: 12px; font-weight: 700; border: 1px solid #f1c40f; }
-        .skill-circle .level-badge.max { background: #f1c40f; color: #000; border-color: #000; }
-        .skill-circle .plus-icon { position: absolute; top: -6px; right: -6px; background: #2ecc71; color: #fff; border-radius: 50%; width: 20px; height: 20px; font-size: 14px; font-weight: 700; display: none; align-items: center; justify-content: center; border: 1px solid #fff; }
-        .skill-node:hover .skill-circle { border-color: #f1c40f; transform: scale(1.05); }
-        .skill-node:hover .plus-icon { display: flex; }
-        .skill-node .skill-name { margin-top: 6px; font-size: 12px; color: #ccc; text-align: center; line-height: 1.2; max-width: 80px; }
-        .skill-tooltip { display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); color: #fff; padding: 8px 12px; border-radius: 12px; font-size: 13px; white-space: normal; max-width: 200px; border: 1px solid #f1c40f; z-index: 10; pointer-events: none; margin-bottom: 8px; }
-        .skill-node:hover .skill-tooltip { display: block; }
-        .skill-points-display { display: flex; justify-content: space-between; font-size: 14px; color: #aaa; margin-bottom: 8px; padding: 0 4px; }
-        .skill-points-display span { color: #f1c40f; font-weight: 700; }
-        .btn { padding: 12px 0; border: none; border-radius: 16px; font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.2s; background: rgba(255,255,255,0.08); color: #fff; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
-        .btn:active { transform: scale(0.96); }
-        .btn-heal { background: #2ecc71; }
-        .btn-heal:active { background: #27ae60; }
-        .btn-flee { background: #95a5a6; }
-        .btn-flee:active { background: #7f8c8d; }
-        .btn-char { background: #8e44ad; }
-        .btn-char:active { background: #6c3483; }
-        .btn-reset { background: #e67e22; }
-        .btn-reset:active { background: #d35400; }
-        .btn-inventory { background: #f39c12; }
-        .btn-inventory:active { background: #d68910; }
-
-        .button-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
+        /* ===== НАСТРОЙКИ В ПЕРСОНАЖЕ ===== */
+        .settings-panel {
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 16px;
+            margin-top: 12px;
         }
-        .button-grid .btn { grid-column: span 1; }
-        .button-grid .btn-full { grid-column: span 2; }
-
-        .log-area {
-            background: rgba(0,0,0,0.4);
-            border-radius: 16px;
-            padding: 10px 14px;
-            min-height: 70px;
-            margin-bottom: 10px;
+        .settings-panel .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .settings-panel .setting-row:last-child { border-bottom: none; }
+        .settings-panel .setting-label { color: #aaa; }
+        .settings-panel .setting-value { color: #fff; font-weight: 600; }
+        .settings-panel .setting-toggle {
+            background: #555;
+            border: none;
+            border-radius: 30px;
+            padding: 4px 12px;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .settings-panel .setting-toggle.active { background: #2ecc71; }
+        .settings-panel .code-input {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .settings-panel .code-input input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: 1px solid #555;
+            background: #222;
+            color: #fff;
             font-size: 14px;
-            line-height: 1.5;
-            color: #ccc;
-            max-height: 110px;
-            overflow-y: auto;
+            outline: none;
         }
-        .log-entry { margin-bottom: 3px; }
-        .log-entry.damage { color: #e74c3c; }
-        .log-entry.heal { color: #2ecc71; }
-        .log-entry.info { color: #85c1e9; }
-        .log-entry.loot { color: #f1c40f; }
-        .log-entry.drop { color: #9b59b6; }
+        .settings-panel .code-input input:focus { border-color: #f1c40f; }
+        .settings-panel .code-input button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 12px;
+            background: #f1c40f;
+            color: #000;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .settings-panel .code-input button:active { transform: scale(0.95); }
 
         @media (max-width: 600px) {
             .char-grid { grid-template-columns: 1fr; }
@@ -269,35 +529,27 @@
             <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px; color:#aaa;">
                 <span>⚔️ <span id="weaponDisplay">Руки</span></span>
                 <span>🛡️ <span id="armorDisplay">Нет</span></span>
+                <span id="attackTypeDisplay">Тип: Физ.</span>
             </div>
         </div>
 
         <div class="log-area" id="logArea">
             <div class="log-entry info">Добро пожаловать в RPG!</div>
-            <div class="log-entry info">Используйте кнопки внизу.</div>
+            <div class="log-entry info">Нажмите любую кнопку атаки для начала боя.</div>
         </div>
 
-        <!-- Кнопки атак (физика, магия) -->
-        <div id="attackContainer">
-            <!-- Физические атаки -->
-            <div class="attack-buttons" id="physAttackButtons">
-                <button class="btn btn-attack-phys" id="btnPhysAttack">⚔️ Удар</button>
-                <button class="btn btn-attack-heavy" id="btnHeavyAttack">💥 Тяжёлый</button>
-                <button class="btn btn-attack-defend" id="btnDefend">🛡️ Защита</button>
-            </div>
-            <!-- Магические атаки -->
-            <div class="attack-buttons" id="magicAttackButtons" style="display:none;">
-                <button class="btn btn-attack-magic-fire" id="btnFireball">🔥 Огненный шар</button>
-                <button class="btn btn-attack-magic-ice" id="btnIceArmor">❄️ Ледяная броня</button>
-                <button class="btn btn-attack-magic-lightning" id="btnLightning">⚡ Молния</button>
-            </div>
-            <div class="action-row">
-                <button class="btn btn-heal" id="btnHeal">💚 Лечиться</button>
-                <button class="btn btn-flee" id="btnFlee">🏃 Сбежать</button>
-            </div>
+        <!-- Кнопки атак (динамические) -->
+        <div class="attack-buttons" id="attackButtons">
+            <button class="btn btn-attack-phys" id="btnAttack1">⚔️ Удар</button>
+            <button class="btn btn-attack-heavy" id="btnAttack2">💥 Тяжёлый</button>
+            <button class="btn btn-attack-defend" id="btnAttack3">🛡️ Защита</button>
         </div>
 
-        <!-- Основные кнопки -->
+        <div class="action-row">
+            <button class="btn btn-heal" id="btnHeal">💚 Лечиться</button>
+            <button class="btn btn-flee" id="btnFlee">🏃 Сбежать</button>
+        </div>
+
         <div class="button-grid">
             <button class="btn btn-char" id="btnOpenChar">👤 Персонаж</button>
             <button class="btn btn-inventory" id="btnInventory">🎒 Инвентарь</button>
@@ -305,17 +557,33 @@
         </div>
     </div>
 
-    <!-- ===== МОДАЛЬНОЕ ОКНО ПЕРСОНАЖА (старое, без изменений) ===== -->
+    <!-- ===== МОДАЛЬНОЕ ОКНО ПЕРСОНАЖА ===== -->
     <div class="modal-overlay" id="charModal">
         <div class="modal">
             <button class="modal-close" id="closeCharModal">✕</button>
             <div class="char-grid">
                 <div class="stat-panel">
-                    <div class="tabs">
+                    <div class="tabs" id="charTabs">
                         <button class="tab-btn active" data-tab="magic">🧙 Магия</button>
                         <button class="tab-btn" data-tab="physical">⚔️ Физика</button>
+                        <button class="tab-btn" data-tab="settings">⚙️ Настройки</button>
                     </div>
                     <div class="stat-content" id="statContent"></div>
+                    <!-- Панель настроек (по умолчанию скрыта) -->
+                    <div class="settings-panel" id="settingsPanel" style="display:none;">
+                        <div class="setting-row">
+                            <span class="setting-label">Тип атак</span>
+                            <button class="setting-toggle active" id="attackTypeToggle">Физический</button>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Код</span>
+                            <div class="code-input">
+                                <input type="text" id="codeInput" placeholder="Введите код">
+                                <button id="codeSubmit">Активировать</button>
+                            </div>
+                        </div>
+                        <div id="codeMessage" style="margin-top:8px; font-size:13px; color:#aaa;"></div>
+                    </div>
                 </div>
                 <div class="center-panel">
                     <div class="frame-container" id="frameContainer">
@@ -366,7 +634,7 @@
         </div>
     </div>
 
-    <!-- ===== МОДАЛЬНОЕ ОКНО ХАРАКТЕРИСТИК (старое) ===== -->
+    <!-- ===== МОДАЛЬНОЕ ОКНО ХАРАКТЕРИСТИК ===== -->
     <div class="stats-modal-overlay" id="statsModal">
         <div class="stats-modal">
             <button class="stats-modal-close" id="closeStatsModal">✕</button>
@@ -426,44 +694,40 @@
             spellPoints: 0,
             skills: {},
             spells: {},
-            // Снаряжение
             equipment: {
-                weapon: null,    // объект предмета
+                weapon: null,
                 armor: null,
                 accessory: null
             },
-            inventory: [],       // массив предметов
-            gold: 0
+            inventory: [],
+            gold: 0,
+            // Настройки
+            attackMode: 'physical' // 'physical' или 'magic'
         };
 
         let enemy = null;
-        let isDefending = false; // флаг защиты
+        let isDefending = false;
 
         // =====================================================================
-        //  СИСТЕМА ПРЕДМЕТОВ
+        //  СИСТЕМА ПРЕДМЕТОВ (без изменений)
         // =====================================================================
         const itemTemplates = {
-            // Оружие
             'Iron Sword': { type: 'weapon', name: 'Железный меч', attackBonus: 4, defenseBonus: 0, rarity: 'common', emoji: '⚔️' },
             'Steel Blade': { type: 'weapon', name: 'Стальной клинок', attackBonus: 8, defenseBonus: 1, rarity: 'rare', emoji: '🗡️' },
             'Crystal Sword': { type: 'weapon', name: 'Хрустальный меч', attackBonus: 12, critBonus: 5, rarity: 'epic', emoji: '🔮' },
             'Dragon Slayer': { type: 'weapon', name: 'Драконоборец', attackBonus: 20, critBonus: 10, rarity: 'legendary', emoji: '🐉' },
-            // Броня
             'Leather Armor': { type: 'armor', name: 'Кожаная броня', defenseBonus: 3, rarity: 'common', emoji: '🛡️' },
             'Chain Mail': { type: 'armor', name: 'Кольчуга', defenseBonus: 6, rarity: 'rare', emoji: '⛓️' },
             'Plate Armor': { type: 'armor', name: 'Латный доспех', defenseBonus: 10, hpBonus: 10, rarity: 'epic', emoji: '🛡️' },
             'Mithril Armor': { type: 'armor', name: 'Мифриловая броня', defenseBonus: 15, hpBonus: 20, rarity: 'legendary', emoji: '✨' },
-            // Аксессуары
             'Ring of Strength': { type: 'accessory', name: 'Кольцо силы', attackBonus: 3, rarity: 'common', emoji: '💍' },
             'Amulet of Protection': { type: 'accessory', name: 'Амулет защиты', defenseBonus: 3, rarity: 'rare', emoji: '📿' },
             'Crystal Amulet': { type: 'accessory', name: 'Хрустальный амулет', attackBonus: 5, defenseBonus: 5, rarity: 'epic', emoji: '💎' },
             'Phoenix Feather': { type: 'accessory', name: 'Перо Феникса', hpBonus: 15, rarity: 'legendary', emoji: '🔥' },
-            // Зелья
             'Health Potion': { type: 'potion', name: 'Зелье здоровья', healAmount: 15, rarity: 'common', emoji: '🧪' },
             'Greater Potion': { type: 'potion', name: 'Большое зелье', healAmount: 35, rarity: 'rare', emoji: '🧪' },
         };
 
-        // Функция создания предмета по ID
         function createItem(id) {
             const template = itemTemplates[id];
             if (!template) return null;
@@ -481,26 +745,20 @@
             };
         }
 
-        // Функция для генерации случайного дропа (вызывается после победы)
         function generateDrop() {
-            // Шанс дропа 60%
             if (Math.random() > 0.6) return null;
-
-            // Определяем пул предметов в зависимости от уровня врага (пока простой)
             const pool = [
                 'Iron Sword', 'Leather Armor', 'Ring of Strength', 'Health Potion',
                 'Steel Blade', 'Chain Mail', 'Amulet of Protection', 'Greater Potion',
                 'Crystal Sword', 'Plate Armor', 'Crystal Amulet',
                 'Dragon Slayer', 'Mithril Armor', 'Phoenix Feather'
             ];
-            // Вес предметов (чем реже, тем меньше шанс)
             const weights = {
                 'Iron Sword': 20, 'Leather Armor': 20, 'Ring of Strength': 20, 'Health Potion': 30,
                 'Steel Blade': 15, 'Chain Mail': 15, 'Amulet of Protection': 15, 'Greater Potion': 20,
                 'Crystal Sword': 8, 'Plate Armor': 8, 'Crystal Amulet': 8,
                 'Dragon Slayer': 3, 'Mithril Armor': 3, 'Phoenix Feather': 3
             };
-            // Выбор с учётом веса
             let totalWeight = 0;
             for (let id of pool) totalWeight += (weights[id] || 10);
             let rand = Math.random() * totalWeight;
@@ -661,7 +919,7 @@
         }
 
         // =====================================================================
-        //  СОХРАНЕНИЕ / ЗАГРУЗКА (расширенное)
+        //  СОХРАНЕНИЕ / ЗАГРУЗКА
         // =====================================================================
         function saveGame() {
             try { localStorage.setItem('rpg_save', JSON.stringify(player)); } catch(e) {}
@@ -679,10 +937,10 @@
                         skills:{}, spells:{},
                         equipment: { weapon:null, armor:null, accessory:null },
                         inventory: [],
-                        gold:0
+                        gold:0,
+                        attackMode: 'physical'
                     };
                     for (let key in defaults) if (player[key]===undefined) player[key]=defaults[key];
-                    // Восстановление объектов предметов из ID
                     if (player.equipment.weapon && typeof player.equipment.weapon === 'string') {
                         player.equipment.weapon = createItem(player.equipment.weapon);
                     }
@@ -692,7 +950,6 @@
                     if (player.equipment.accessory && typeof player.equipment.accessory === 'string') {
                         player.equipment.accessory = createItem(player.equipment.accessory);
                     }
-                    // Восстановление инвентаря
                     if (Array.isArray(player.inventory)) {
                         player.inventory = player.inventory.map(item => {
                             if (typeof item === 'string') return createItem(item);
@@ -712,23 +969,19 @@
         }
 
         // =====================================================================
-        //  UI ОБНОВЛЕНИЯ
+        //  UI ОБНОВЛЕНИЯ (основной экран)
         // =====================================================================
         function updateMainUI() {
-            document.getElementById('playerNameTop').textContent = player.name;
-            document.getElementById('playerLevelTop').textContent = player.level;
-            document.getElementById('playerHpTop').textContent = `${player.hp}/${player.maxHp}`;
-            // Боевая панель
             document.getElementById('playerNameBattle').textContent = player.name;
             document.getElementById('playerHpBattle').textContent = `${player.hp}/${player.maxHp}`;
             const hpPercent = Math.max(0, (player.hp / player.maxHp) * 100);
             document.getElementById('playerHpFillBattle').style.width = hpPercent + '%';
 
-            // Оружие и броня
             const weaponName = player.equipment.weapon ? player.equipment.weapon.name : 'Руки';
             const armorName = player.equipment.armor ? player.equipment.armor.name : 'Нет';
             document.getElementById('weaponDisplay').textContent = weaponName;
             document.getElementById('armorDisplay').textContent = armorName;
+            document.getElementById('attackTypeDisplay').textContent = `Тип: ${player.attackMode === 'physical' ? 'Физ.' : 'Маг.'}`;
 
             if (enemy) {
                 document.getElementById('enemyName').textContent = `Враг: ${enemy.name}`;
@@ -740,6 +993,9 @@
                 document.getElementById('enemyHpText').textContent = '---';
                 document.getElementById('enemyHpFill').style.width = '0%';
             }
+
+            // Обновляем кнопки атак в зависимости от режима
+            updateAttackButtons();
         }
 
         function addLog(message, type='info') {
@@ -753,7 +1009,38 @@
         }
 
         // =====================================================================
-        //  ОКНО ПЕРСОНАЖА (старое, но с обновлением статов)
+        //  ОБНОВЛЕНИЕ КНОПОК АТАК
+        // =====================================================================
+        function updateAttackButtons() {
+            const btn1 = document.getElementById('btnAttack1');
+            const btn2 = document.getElementById('btnAttack2');
+            const btn3 = document.getElementById('btnAttack3');
+
+            if (player.attackMode === 'physical') {
+                btn1.textContent = '⚔️ Удар';
+                btn1.className = 'btn btn-attack-phys';
+                btn1.dataset.action = 'normal';
+                btn2.textContent = '💥 Тяжёлый';
+                btn2.className = 'btn btn-attack-heavy';
+                btn2.dataset.action = 'heavy';
+                btn3.textContent = '🛡️ Защита';
+                btn3.className = 'btn btn-attack-defend';
+                btn3.dataset.action = 'defend';
+            } else { // magic
+                btn1.textContent = '🔥 Огненный шар';
+                btn1.className = 'btn btn-attack-magic-fire';
+                btn1.dataset.action = 'fireball';
+                btn2.textContent = '❄️ Ледяная броня';
+                btn2.className = 'btn btn-attack-magic-ice';
+                btn2.dataset.action = 'ice';
+                btn3.textContent = '⚡ Молния';
+                btn3.className = 'btn btn-attack-magic-lightning';
+                btn3.dataset.action = 'lightning';
+            }
+        }
+
+        // =====================================================================
+        //  ОКНО ПЕРСОНАЖА (с настройками)
         // =====================================================================
         function updateCharWindow() {
             const level = player.level;
@@ -767,6 +1054,11 @@
             document.getElementById('skillPointsDisplay').textContent = player.skillPoints;
             document.getElementById('spellPointsDisplay').textContent = player.spellPoints;
             renderTree(currentTreeTab);
+            // Обновляем настройки
+            const toggle = document.getElementById('attackTypeToggle');
+            toggle.textContent = player.attackMode === 'physical' ? 'Физический' : 'Магический';
+            toggle.className = 'setting-toggle active';
+            document.getElementById('codeMessage').textContent = '';
         }
 
         let currentStatTab = 'magic';
@@ -782,7 +1074,7 @@
                     </div>
                     <div class="row"><span class="label">📈 Мудрость</span><span class="val">${player.wisdom}</span></div>
                 `;
-            } else {
+            } else if (currentStatTab === 'physical') {
                 container.innerHTML = `
                     <div class="row"><span class="label">⚔️ Атака</span><span class="val">${player.attack}</span></div>
                     <div class="row"><span class="label">🛡️ Защита</span><span class="val">${player.defense}</span></div>
@@ -796,6 +1088,22 @@
                     <div class="row"><span class="label">🛡️ Телосложение</span><span class="val">${player.constitution}</span></div>
                     <div class="row"><span class="label">🍀 Удача</span><span class="val">${player.luck}</span></div>
                 `;
+            } else if (currentStatTab === 'settings') {
+                // Панель настроек показываем отдельно
+                container.innerHTML = '';
+                document.getElementById('settingsPanel').style.display = 'block';
+                // Обновим тоггл и сообщение
+                const toggle = document.getElementById('attackTypeToggle');
+                toggle.textContent = player.attackMode === 'physical' ? 'Физический' : 'Магический';
+                toggle.className = 'setting-toggle active';
+                document.getElementById('codeMessage').textContent = '';
+                return;
+            } else {
+                container.innerHTML = '';
+            }
+            // Скрываем панель настроек, если выбрана не вкладка настроек
+            if (currentStatTab !== 'settings') {
+                document.getElementById('settingsPanel').style.display = 'none';
             }
         }
 
@@ -975,124 +1283,6 @@
         }
 
         function renderInventory() {
-            // Отображаем экипировку
-            document.getElementById('equippedWeapon').textContent = player.equipment.weapon ? player.equipment.weapon.name : 'Нет';
-            document.getElementById('equippedArmor').textContent = player.equipment.armor ? player.equipment.armor.name : 'Нет';
-            document.getElementById('equippedAccessory').textContent = player.equipment.accessory ? player.equipment.accessory.name : 'Нет';
-
-            const list = document.getElementById('inventoryList');
-            if (player.inventory.length === 0) {
-                list.innerHTML = '<div style="text-align:center;color:#aaa;">Инвентарь пуст</div>';
-                return;
-            }
-
-            let html = '';
-            player.inventory.forEach((item, index) => {
-                const rarityClass = 'item-rarity-' + item.rarity;
-                const isEquipped = (player.equipment.weapon && player.equipment.weapon.id === item.id) ||
-                                   (player.equipment.armor && player.equipment.armor.id === item.id) ||
-                                   (player.equipment.accessory && player.equipment.accessory.id === item.id);
-                let statsText = [];
-                if (item.attackBonus) statsText.push(`⚔️+${item.attackBonus}`);
-                if (item.defenseBonus) statsText.push(`🛡️+${item.defenseBonus}`);
-                if (item.hpBonus) statsText.push(`❤️+${item.hpBonus}`);
-                if (item.critBonus) statsText.push(`💥+${item.critBonus}%`);
-                if (item.healAmount) statsText.push(`💚+${item.healAmount}`);
-                const statsStr = statsText.join(' ');
-                const buttonText = isEquipped ? 'Снять' : 'Надеть';
-                const buttonClass = isEquipped ? 'btn-use equipped' : 'btn-use';
-
-                html += `
-                    <div class="inventory-item ${rarityClass}">
-                        <div>
-                            <span class="item-name">${item.emoji} ${item.name}</span>
-                            <div class="item-stats">${statsStr} (${item.rarity})</div>
-                        </div>
-                        <button class="${buttonClass}" data-index="${index}" data-action="${isEquipped ? 'unequip' : 'equip'}">${buttonText}</button>
-                    </div>
-                `;
-            });
-            list.innerHTML = html;
-
-            // Обработчики для кнопок
-            list.querySelectorAll('.btn-use').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const index = parseInt(this.dataset.index);
-                    const action = this.dataset.action;
-                    if (action === 'equip') {
-                        equipItem(index);
-                    } else if (action === 'unequip') {
-                        unequipItem(index);
-                    }
-                });
-            });
-        }
-
-        function equipItem(index) {
-            const item = player.inventory[index];
-            if (!item) return;
-            // Проверяем, не занят ли слот
-            const slot = item.type;
-            if (slot === 'potion') {
-                // Зелье используется сразу
-                usePotion(item);
-                return;
-            }
-            // Если уже есть предмет в слоте, снимаем его в инвентарь
-            if (player.equipment[slot]) {
-                player.inventory.push(player.equipment[slot]);
-            }
-            // Экипируем
-            player.equipment[slot] = item;
-            // Удаляем из инвентаря
-            player.inventory.splice(index, 1);
-            recalcStats();
-            saveGame();
-            renderInventory();
-            updateMainUI();
-            addLog(`🔰 Экипировано: ${item.name}`, 'info');
-        }
-
-        function unequipItem(index) {
-            // Определяем, какой предмет снимаем (по индексу в инвентаре? или по слою?)
-            // У нас индекс указывает на предмет в инвентаре, но мы хотим снять экипированный предмет.
-            // Лучше сделать отдельную функцию для снятия по слоту.
-            // Переделаем: будем передавать слот.
-        }
-
-        // Новая функция для снятия по слоту
-        function unequipSlot(slot) {
-            if (!player.equipment[slot]) return;
-            const item = player.equipment[slot];
-            player.inventory.push(item);
-            player.equipment[slot] = null;
-            recalcStats();
-            saveGame();
-            renderInventory();
-            updateMainUI();
-            addLog(`🔰 Снято: ${item.name}`, 'info');
-        }
-
-        function usePotion(item) {
-            if (player.hp >= player.maxHp) {
-                addLog('Ваше здоровье полностью восстановлено.', 'info');
-                return;
-            }
-            const heal = item.healAmount || 0;
-            player.hp = Math.min(player.maxHp, player.hp + heal);
-            // Удаляем зелье из инвентаря
-            const idx = player.inventory.indexOf(item);
-            if (idx !== -1) player.inventory.splice(idx, 1);
-            recalcStats();
-            saveGame();
-            renderInventory();
-            updateMainUI();
-            addLog(`🧪 Использовано ${item.name}, восстановлено ${heal} HP`, 'heal');
-        }
-
-        // Обновляем обработчики в рендере инвентаря: добавим кнопку "Снять" для экипированных
-        // Изменим функцию renderInventory для поддержки снятия по слотам
-        function renderInventory() {
             document.getElementById('equippedWeapon').textContent = player.equipment.weapon ? player.equipment.weapon.name : 'Нет';
             document.getElementById('equippedArmor').textContent = player.equipment.armor ? player.equipment.armor.name : 'Нет';
             document.getElementById('equippedAccessory').textContent = player.equipment.accessory ? player.equipment.accessory.name : 'Нет';
@@ -1140,39 +1330,80 @@
                 });
             });
 
-            // Добавляем кнопки снятия для экипированных слотов
-            // Сделаем их отдельно вверху
+            // Кнопки снятия для экипированных слотов
             const slots = ['weapon', 'armor', 'accessory'];
             slots.forEach(slot => {
                 const slotEl = document.getElementById('equipped' + slot.charAt(0).toUpperCase() + slot.slice(1));
+                const parent = slotEl.parentNode;
+                // Удаляем старую кнопку, если есть
+                let oldBtn = parent.querySelector('.btn-unequip-slot');
+                if (oldBtn) oldBtn.remove();
                 if (player.equipment[slot]) {
-                    // Добавляем кнопку снятия рядом с названием
-                    const parent = slotEl.parentNode;
-                    // Проверяем, нет ли уже кнопки
-                    let btn = parent.querySelector('.btn-unequip-slot');
-                    if (!btn) {
-                        btn = document.createElement('button');
-                        btn.className = 'btn-use equipped';
-                        btn.textContent = 'Снять';
-                        btn.style.marginTop = '4px';
-                        btn.style.fontSize = '11px';
-                        btn.dataset.slot = slot;
-                        btn.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            unequipSlot(this.dataset.slot);
-                        });
-                        parent.appendChild(btn);
-                    }
-                } else {
-                    // Удаляем кнопку, если есть
-                    const btn = parent.querySelector('.btn-unequip-slot');
-                    if (btn) btn.remove();
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-use equipped btn-unequip-slot';
+                    btn.textContent = 'Снять';
+                    btn.style.marginTop = '4px';
+                    btn.style.fontSize = '11px';
+                    btn.dataset.slot = slot;
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        unequipSlot(this.dataset.slot);
+                    });
+                    parent.appendChild(btn);
                 }
             });
         }
 
+        function equipItem(index) {
+            const item = player.inventory[index];
+            if (!item) return;
+            const slot = item.type;
+            if (slot === 'potion') {
+                usePotion(item);
+                return;
+            }
+            if (player.equipment[slot]) {
+                player.inventory.push(player.equipment[slot]);
+            }
+            player.equipment[slot] = item;
+            player.inventory.splice(index, 1);
+            recalcStats();
+            saveGame();
+            renderInventory();
+            updateMainUI();
+            addLog(`🔰 Экипировано: ${item.name}`, 'info');
+        }
+
+        function unequipSlot(slot) {
+            if (!player.equipment[slot]) return;
+            const item = player.equipment[slot];
+            player.inventory.push(item);
+            player.equipment[slot] = null;
+            recalcStats();
+            saveGame();
+            renderInventory();
+            updateMainUI();
+            addLog(`🔰 Снято: ${item.name}`, 'info');
+        }
+
+        function usePotion(item) {
+            if (player.hp >= player.maxHp) {
+                addLog('Ваше здоровье полностью восстановлено.', 'info');
+                return;
+            }
+            const heal = item.healAmount || 0;
+            player.hp = Math.min(player.maxHp, player.hp + heal);
+            const idx = player.inventory.indexOf(item);
+            if (idx !== -1) player.inventory.splice(idx, 1);
+            recalcStats();
+            saveGame();
+            renderInventory();
+            updateMainUI();
+            addLog(`🧪 Использовано ${item.name}, восстановлено ${heal} HP`, 'heal');
+        }
+
         // =====================================================================
-        //  БОЕВАЯ СИСТЕМА С РАЗНЫМИ АТАКАМИ
+        //  БОЕВАЯ СИСТЕМА
         // =====================================================================
         function generateEnemy() {
             const levelScale = player.level;
@@ -1185,54 +1416,88 @@
             return { name, hp, maxHp: hp, attack, defense, xpReward };
         }
 
-        // Выполнение атаки
-        function performAction(type, attackType) {
+        // Функция атаки (вызывается из обработчиков кнопок)
+        function performAction(action) {
+            // Если врага нет, создаём
             if (!enemy) {
-                addLog('Нет врага!', 'info');
+                enemy = generateEnemy();
+                addLog(`⚔️ Вы встретили ${enemy.name} (HP: ${enemy.hp})`, 'info');
+                updateMainUI();
+                // После создания врага продолжаем атаку в этом же ходе?
+                // Можно сразу выполнить атаку, но лучше подождать повторного клика.
+                // Но для удобства сделаем так: после появления врага сразу же выполняем атаку.
+                // Для этого вызовем эту же функцию ещё раз (с тем же действием).
+                // Чтобы избежать рекурсии, проверим, что враг создан.
+                if (enemy) {
+                    // Выполняем атаку
+                    executeAttack(action);
+                }
+                return;
+            } else {
+                executeAttack(action);
+            }
+        }
+
+        function executeAttack(action) {
+            // Проверка, жив ли враг
+            if (!enemy || enemy.hp <= 0) {
+                enemy = null;
+                addLog('Враг повержен!', 'info');
+                updateMainUI();
                 return;
             }
 
             let damage, critChance, critMult, attackName;
             let isMagic = false;
 
-            if (attackType === 'physical') {
-                damage = Math.max(1, player.attack - Math.floor(enemy.defense * 0.5) + Math.floor(Math.random() * 3));
-                critChance = player.critChance;
-                critMult = player.critMult;
-                attackName = 'Удар';
-                if (type === 'heavy') {
+            if (player.attackMode === 'physical') {
+                if (action === 'normal') {
+                    damage = Math.max(1, player.attack - Math.floor(enemy.defense * 0.5) + Math.floor(Math.random() * 3));
+                    critChance = player.critChance;
+                    critMult = player.critMult;
+                    attackName = 'Удар';
+                } else if (action === 'heavy') {
+                    damage = Math.max(1, player.attack - Math.floor(enemy.defense * 0.5) + Math.floor(Math.random() * 3));
                     damage = Math.floor(damage * 1.8);
-                    critChance = Math.min(critChance * 0.5, 50);
+                    critChance = Math.min(player.critChance * 0.5, 50);
+                    critMult = player.critMult;
                     attackName = 'Тяжёлый удар';
-                }
-                if (type === 'defend') {
+                } else if (action === 'defend') {
                     isDefending = true;
                     addLog(`🛡️ Вы встали в защиту! Урон снижен в 2 раза в следующем ходе.`, 'info');
-                    updateMainUI();
                     // Ход врага
                     enemyTurn();
+                    updateMainUI();
                     return;
+                } else {
+                    damage = 0;
                 }
-            } else if (attackType === 'magic') {
+            } else { // magic
                 isMagic = true;
-                damage = Math.max(1, player.magicAttack - Math.floor(enemy.defense * 0.3) + Math.floor(Math.random() * 4));
-                critChance = player.magicCritChance;
-                critMult = 150; // базовый множитель
-                if (type === 'fireball') {
+                if (action === 'fireball') {
+                    damage = Math.max(1, player.magicAttack - Math.floor(enemy.defense * 0.3) + Math.floor(Math.random() * 4));
                     damage = Math.floor(damage * 1.4);
+                    critChance = player.magicCritChance;
+                    critMult = 150;
                     attackName = 'Огненный шар';
-                } else if (type === 'ice') {
-                    // Ледяная броня даёт защиту, но не атакует? Сделаем как атаку с эффектом замедления (пока просто атака)
+                } else if (action === 'ice') {
+                    damage = Math.max(1, player.magicAttack - Math.floor(enemy.defense * 0.3) + Math.floor(Math.random() * 4));
                     damage = Math.floor(damage * 1.0);
+                    critChance = player.magicCritChance;
+                    critMult = 150;
                     attackName = 'Ледяная броня';
-                } else if (type === 'lightning') {
+                } else if (action === 'lightning') {
+                    damage = Math.max(1, player.magicAttack - Math.floor(enemy.defense * 0.3) + Math.floor(Math.random() * 4));
                     damage = Math.floor(damage * 1.8);
-                    critChance = Math.min(critChance * 1.5, 80);
+                    critChance = Math.min(player.magicCritChance * 1.5, 80);
+                    critMult = 150;
                     attackName = 'Молния';
+                } else {
+                    damage = 0;
                 }
             }
 
-            // Крит
+            // Проверка крита
             let isCrit = false;
             if (Math.random() * 100 < critChance) {
                 isCrit = true;
@@ -1260,10 +1525,11 @@
 
             // Ход врага
             enemyTurn();
+            updateMainUI();
         }
 
         function enemyTurn() {
-            // Враг атакует
+            if (!enemy) return;
             let enemyHits = true;
             if (Math.random() * 100 < player.dodge) {
                 enemyHits = false;
@@ -1271,7 +1537,6 @@
             }
             if (enemyHits) {
                 let enemyDamage = Math.max(1, enemy.attack - Math.floor(player.defense * 0.5) + Math.floor(Math.random() * 2));
-                // Если защита, снижаем урон
                 if (isDefending) {
                     enemyDamage = Math.floor(enemyDamage * 0.5);
                     isDefending = false;
@@ -1293,13 +1558,11 @@
         }
 
         function victory() {
-            // Победа
             if (player.level < 100) {
                 const xpGain = enemy.xpReward;
                 player.xp += xpGain;
                 addLog(`💀 ${enemy.name} повержен! +${xpGain} опыта`, 'loot');
 
-                // Кровожадность
                 const bloodthirstLevel = player.skills.bloodthirst || 0;
                 if (bloodthirstLevel > 0) {
                     const healAmount = bloodthirstLevel * 2;
@@ -1307,7 +1570,6 @@
                     addLog(`🩸 Кровожадность восстанавливает ${healAmount} HP!`, 'heal');
                 }
 
-                // Дроп
                 const drop = generateDrop();
                 if (drop) {
                     player.inventory.push(drop);
@@ -1340,32 +1602,49 @@
         }
 
         // =====================================================================
+        //  КОД ДЛЯ 100 УРОВНЯ
+        // =====================================================================
+        function applyCode(code) {
+            if (code === 'Nikverlid2029') {
+                // Устанавливаем 100 уровень
+                player.level = 100;
+                player.xp = 0;
+                player.xpToNext = Infinity;
+                // Даём очки характеристик (можно много)
+                player.statPoints += 200; // чтобы точно хватило на всё
+                player.skillPoints += 100;
+                player.spellPoints += 100;
+                // Пересчёт
+                recalcStats();
+                player.hp = player.maxHp;
+                saveGame();
+                updateMainUI();
+                updateCharWindow();
+                document.getElementById('codeMessage').textContent = '✅ Код активирован! Вы получили 100 уровень!';
+                document.getElementById('codeMessage').style.color = '#2ecc71';
+                addLog('🔮 Код Nikverlid2029 активирован! Вы достигли 100 уровня!', 'loot');
+            } else {
+                document.getElementById('codeMessage').textContent = '❌ Неверный код.';
+                document.getElementById('codeMessage').style.color = '#e74c3c';
+            }
+        }
+
+        // =====================================================================
         //  ОБРАБОТЧИКИ КНОПОК
         // =====================================================================
-        document.getElementById('btnPhysAttack').addEventListener('click', function() {
-            if (!enemy) { addLog('Нет врага!', 'info'); return; }
-            performAction('normal', 'physical');
-        });
-        document.getElementById('btnHeavyAttack').addEventListener('click', function() {
-            if (!enemy) { addLog('Нет врага!', 'info'); return; }
-            performAction('heavy', 'physical');
-        });
-        document.getElementById('btnDefend').addEventListener('click', function() {
-            if (!enemy) { addLog('Нет врага!', 'info'); return; }
-            performAction('defend', 'physical');
-        });
 
-        document.getElementById('btnFireball').addEventListener('click', function() {
-            if (!enemy) { addLog('Нет врага!', 'info'); return; }
-            performAction('fireball', 'magic');
+        // Кнопки атак (общий обработчик)
+        document.getElementById('btnAttack1').addEventListener('click', function() {
+            const action = this.dataset.action || 'normal';
+            performAction(action);
         });
-        document.getElementById('btnIceArmor').addEventListener('click', function() {
-            if (!enemy) { addLog('Нет врага!', 'info'); return; }
-            performAction('ice', 'magic');
+        document.getElementById('btnAttack2').addEventListener('click', function() {
+            const action = this.dataset.action || 'heavy';
+            performAction(action);
         });
-        document.getElementById('btnLightning').addEventListener('click', function() {
-            if (!enemy) { addLog('Нет врага!', 'info'); return; }
-            performAction('lightning', 'magic');
+        document.getElementById('btnAttack3').addEventListener('click', function() {
+            const action = this.dataset.action || 'defend';
+            performAction(action);
         });
 
         // Лечение
@@ -1389,7 +1668,6 @@
                 updateMainUI();
             } else {
                 addLog(`😰 Не удалось сбежать!`, 'damage');
-                // Враг атакует
                 let enemyDamage = Math.max(1, enemy.attack - Math.floor(player.defense*0.5) + Math.floor(Math.random()*2));
                 if (Math.random()*100 < player.dodge) {
                     addLog(`🌀 Уклонились!`, 'info');
@@ -1439,7 +1717,8 @@
                     spells: {},
                     equipment: { weapon: null, armor: null, accessory: null },
                     inventory: [],
-                    gold: 0
+                    gold: 0,
+                    attackMode: 'physical'
                 };
                 enemy = null;
                 recalcStats();
@@ -1470,6 +1749,22 @@
         });
         charModal.addEventListener('click', (e)=> { if (e.target===charModal) { charModal.classList.remove('active'); document.body.style.overflow=''; } });
 
+        // Переключение вкладок в персонаже
+        document.getElementById('charTabs').addEventListener('click', function(e) {
+            if (e.target.classList.contains('tab-btn')) {
+                document.querySelectorAll('#charTabs .tab-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentStatTab = e.target.dataset.tab;
+                updateStatPanel();
+                // Если настройки, показываем панель
+                if (currentStatTab === 'settings') {
+                    document.getElementById('settingsPanel').style.display = 'block';
+                } else {
+                    document.getElementById('settingsPanel').style.display = 'none';
+                }
+            }
+        });
+
         const statsModal = document.getElementById('statsModal');
         const openStatsBtn = document.getElementById('openStatsModalBtn');
         const closeStatsBtn = document.getElementById('closeStatsModal');
@@ -1477,20 +1772,28 @@
         closeStatsBtn.addEventListener('click', closeStatsModal);
         statsModal.addEventListener('click', (e)=> { if (e.target===statsModal) closeStatsModal(); });
 
-        document.querySelectorAll('.stat-panel .tab-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.stat-panel .tab-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                currentStatTab = this.dataset.tab;
-                updateStatPanel();
-            });
-        });
-
         // Инвентарь
         document.getElementById('btnInventory').addEventListener('click', openInventory);
         document.getElementById('closeInventoryModal').addEventListener('click', closeInventory);
         document.getElementById('inventoryModal').addEventListener('click', (e)=> {
             if (e.target === document.getElementById('inventoryModal')) closeInventory();
+        });
+
+        // =====================================================================
+        //  НАСТРОЙКИ
+        // =====================================================================
+        document.getElementById('attackTypeToggle').addEventListener('click', function() {
+            player.attackMode = player.attackMode === 'physical' ? 'magic' : 'physical';
+            this.textContent = player.attackMode === 'physical' ? 'Физический' : 'Магический';
+            updateMainUI();
+            updateCharWindow();
+            saveGame();
+        });
+
+        document.getElementById('codeSubmit').addEventListener('click', function() {
+            const code = document.getElementById('codeInput').value.trim();
+            applyCode(code);
+            document.getElementById('codeInput').value = '';
         });
 
         // =====================================================================
@@ -1502,13 +1805,8 @@
         updateMainUI();
         addLog(`👋 Привет, ${player.name}!`, 'info');
 
-        // Показываем кнопки атак только когда есть враг (добавим автоматическое переключение)
-        // Но для удобства покажем сразу обе группы, пусть будут активны, но атака возможна только при наличии врага.
-        // Сделаем так, чтобы физика и магия отображались всегда, но в бою работают только при наличии врага.
-        // Для переключения между физикой и магией можно добавить кнопку, но пока оставим обе группы.
-
         window.addEventListener('beforeunload', ()=> saveGame());
-        console.log('RPG с боем, снаряжением и дропом загружена.');
+        console.log('RPG с настройками и кодом загружена.');
     </script>
 </body>
 </html>
