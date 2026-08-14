@@ -3,72 +3,264 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Моя RPG Игра</title>
-    <!-- Подключаем скрипт Telegram, чтобы наше приложение могло общаться с мессенджером -->
+    <title>War of the Virtuosos</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            font-family: sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #1e1e2e; /* Тёмный фон, как в Telegram */
-            color: #cdd6f4;
-        }
-        .game-button {
-            background-color: #89b4fa;
-            border: none;
-            color: #1e1e2e;
-            padding: 15px 32px;
-            text-align: center;
-            font-size: 16px;
-            margin: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            width: 200px;
-        }
-        .game-button:hover {
-            background-color: #b4befe;
-        }
+        /* ... ваш стиль (оставьте как есть) ... */
     </style>
 </head>
 <body>
-    <h1>Добро пожаловать в RPG!</h1>
-    <p id="infoText">Ты - отважный герой.</p>
-    <button class="game-button" onclick="attack()">⚔️ Атаковать</button>
-    <button class="game-button" onclick="rest()">💤 Отдохнуть</button>
+    <div class="game-container">
+        <h1>⚔️ War of Virtuosos</h1>
+        <div class="status-card">
+            <!-- ... -->
+        </div>
+        <div class="log-area" id="logArea">
+            <div class="log-entry info">Добро пожаловать в RPG!</div>
+            <div class="log-entry info">Нажми «Сражаться» чтобы найти врага.</div>
+        </div>
+        <div class="button-grid">
+            <!-- ... -->
+        </div>
+    </div>
 
     <script>
-        // Инициализируем мини-приложение, чтобы Telegram знал, что оно загружено
         const tg = window.Telegram.WebApp;
         tg.ready();
 
-        // Здесь будет логика игры
-        let health = 100;
-
-        function updateInfo() {
-            document.getElementById('infoText').innerText = `Здоровье: ${health}`;
+        // ---- Функция опыта ----
+        function getXpToNext(level) {
+            if (level >= 100) return Infinity;
+            if (level === 98) return 999999;
+            if (level === 99) return 1000000;
+            return Math.floor(10 * Math.pow(1.5, level - 1)) + 5;
         }
 
-        function attack() {
-            const damage = Math.floor(Math.random() * 20) + 5;
-            health = Math.max(0, health - damage);
-            updateInfo();
-            // Отправляем сообщение боту (опционально)
-            // tg.sendData(JSON.stringify({ action: 'attack', health: health }));
+        // ---- Игровое состояние ----
+        let player = {
+            name: "Герой",
+            level: 1,
+            hp: 20,
+            maxHp: 20,
+            attack: 5,
+            defense: 2,
+            xp: 0,
+            xpToNext: getXpToNext(1)
+        };
+
+        let enemy = null;
+
+        // ---- Сохранение / загрузка ----
+        function saveGame() {
+            try {
+                localStorage.setItem('rpg_save', JSON.stringify(player));
+            } catch(e) {}
         }
 
-        function rest() {
-            health = Math.min(100, health + 15);
-            updateInfo();
+        function loadGame() {
+            try {
+                const data = localStorage.getItem('rpg_save');
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    player = parsed;
+                    if (!player.maxHp) player.maxHp = player.hp;
+                    if (!player.xpToNext) player.xpToNext = getXpToNext(player.level);
+                    // Если уровень 100, ставим xpToNext = Infinity
+                    if (player.level >= 100) player.xpToNext = Infinity;
+                }
+            } catch(e) {}
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                player.name = tg.initDataUnsafe.user.first_name || player.name;
+            }
         }
 
-        // Обновляем информацию при загрузке
-        updateInfo();
+        function updateUI() {
+            document.getElementById('playerName').textContent = player.name;
+            document.getElementById('playerLevel').textContent = player.level;
+            document.getElementById('playerAttack').textContent = player.attack;
+            document.getElementById('playerDefense').textContent = player.defense;
+            document.getElementById('playerHpText').textContent = `${player.hp}/${player.maxHp}`;
+            const hpPercent = Math.max(0, (player.hp / player.maxHp) * 100);
+            document.getElementById('playerHpFill').style.width = hpPercent + '%';
+            const xpText = player.xpToNext === Infinity ? '∞' : player.xpToNext;
+            document.getElementById('playerXpText').textContent = `${player.xp} / ${xpText}`;
+            const xpPercent = player.xpToNext === Infinity ? 100 : Math.min(100, (player.xp / player.xpToNext) * 100);
+            document.getElementById('playerXpFill').style.width = xpPercent + '%';
+            saveGame();
+        }
+
+        function addLog(message, type = 'info') {
+            const logArea = document.getElementById('logArea');
+            const div = document.createElement('div');
+            div.className = `log-entry ${type}`;
+            div.textContent = message;
+            logArea.appendChild(div);
+            logArea.scrollTop = logArea.scrollHeight;
+            if (logArea.children.length > 50) {
+                logArea.removeChild(logArea.children[0]);
+            }
+        }
+
+        function generateEnemy() {
+            const levelScale = player.level;
+            const names = ['Гоблин', 'Скелет', 'Волк', 'Бандит', 'Тролль', 'Призрак', 'Орк'];
+            const name = names[Math.floor(Math.random() * names.length)];
+            const hp = Math.floor(10 + levelScale * 4 + Math.random() * 8);
+            const attack = Math.floor(3 + levelScale * 2 + Math.random() * 3);
+            const defense = Math.floor(1 + levelScale * 1 + Math.random() * 2);
+            const xpReward = Math.floor(5 + levelScale * 3 + Math.random() * 4);
+            return { name, hp, maxHp: hp, attack, defense, xpReward };
+        }
+
+        // ---- Боевые действия ----
+        function fight() {
+            if (!enemy) {
+                enemy = generateEnemy();
+                addLog(`⚔️ Вы встретили ${enemy.name} (HP: ${enemy.hp})`, 'info');
+                updateUI();
+                return;
+            }
+
+            // Игрок атакует
+            const playerDamage = Math.max(1, player.attack - Math.floor(enemy.defense * 0.5) + Math.floor(Math.random() * 3));
+            enemy.hp -= playerDamage;
+            addLog(`🗡️ Вы нанесли ${playerDamage} урона ${enemy.name}`, 'damage');
+
+            if (enemy.hp <= 0) {
+                // Победа!
+                if (player.level < 100) {
+                    const xpGain = enemy.xpReward;
+                    player.xp += xpGain;
+                    addLog(`💀 ${enemy.name} повержен! +${xpGain} опыта`, 'loot');
+                    while (player.level < 100 && player.xp >= player.xpToNext) {
+                        player.xp -= player.xpToNext;
+                        player.level++;
+                        player.maxHp += 5;
+                        player.hp = Math.min(player.hp + 5, player.maxHp);
+                        player.attack += 2;
+                        player.defense += 1;
+                        player.xpToNext = getXpToNext(player.level);
+                        addLog(`🎉 УРОВЕНЬ ${player.level}! Характеристики улучшены!`, 'loot');
+                    }
+                    if (player.level === 100) {
+                        addLog('🏆 Вы достигли максимального уровня!', 'loot');
+                        player.xpToNext = Infinity;
+                        // Обнуляем лишний опыт, чтобы шкала была полной
+                        if (player.xp > 0) player.xp = 0;
+                    }
+                } else {
+                    addLog(`💀 ${enemy.name} повержен! Вы достигли максимального уровня!`, 'loot');
+                }
+                enemy = null;
+                updateUI();
+                try {
+                    tg.sendData(JSON.stringify({ action: 'victory', level: player.level }));
+                } catch(e) {}
+                return;
+            }
+
+            // Враг атакует
+            const enemyDamage = Math.max(1, enemy.attack - Math.floor(player.defense * 0.5) + Math.floor(Math.random() * 2));
+            player.hp -= enemyDamage;
+            addLog(`💢 ${enemy.name} наносит ${enemyDamage} урона`, 'damage');
+
+            if (player.hp <= 0) {
+                player.hp = 0;
+                addLog(`💀 Вы погибли в бою... Нажмите «Новая игра»`, 'damage');
+                enemy = null;
+                updateUI();
+                return;
+            }
+
+            updateUI();
+            try {
+                tg.sendData(JSON.stringify({ action: 'fight', hp: player.hp }));
+            } catch(e) {}
+        }
+
+        function heal() {
+            if (player.hp <= 0) {
+                addLog('Вы не можете лечиться, вы мертвы!', 'damage');
+                return;
+            }
+            const healAmount = Math.floor(5 + player.level * 2 + Math.random() * 5);
+            player.hp = Math.min(player.maxHp, player.hp + healAmount);
+            addLog(`💚 Вы восстановили ${healAmount} HP`, 'heal');
+            updateUI();
+        }
+
+        function flee() {
+            if (!enemy) {
+                addLog('Нет врага, чтобы сбежать.', 'info');
+                return;
+            }
+            if (Math.random() < 0.5) {
+                addLog(`🏃 Вы сбежали от ${enemy.name}!`, 'info');
+                enemy = null;
+            } else {
+                addLog(`😰 Не удалось сбежать! ${enemy.name} атакует!`, 'damage');
+                const enemyDamage = Math.max(1, enemy.attack - Math.floor(player.defense * 0.5) + Math.floor(Math.random() * 2));
+                player.hp -= enemyDamage;
+                addLog(`💢 ${enemy.name} наносит ${enemyDamage} урона`, 'damage');
+                if (player.hp <= 0) {
+                    player.hp = 0;
+                    addLog(`💀 Вы погибли...`, 'damage');
+                    enemy = null;
+                }
+                updateUI();
+            }
+            updateUI();
+        }
+
+        function showStatus() {
+            if (enemy) {
+                addLog(`👾 Враг: ${enemy.name} | HP: ${enemy.hp}/${enemy.maxHp}`, 'info');
+            } else {
+                let msg = `👤 Игрок: ${player.name} | Ур.${player.level}`;
+                if (player.level >= 100) msg += ' (МАКСИМУМ)';
+                const xpDisplay = player.xpToNext === Infinity ? '∞' : player.xpToNext;
+                msg += ` | HP: ${player.hp}/${player.maxHp} | Опыт: ${player.xp}/${xpDisplay}`;
+                addLog(msg, 'info');
+            }
+        }
+
+        function resetGame() {
+            if (confirm('Начать новую игру? Прогресс будет потерян.')) {
+                player = {
+                    name: player.name,
+                    level: 1,
+                    hp: 20,
+                    maxHp: 20,
+                    attack: 5,
+                    defense: 2,
+                    xp: 0,
+                    xpToNext: getXpToNext(1)
+                };
+                enemy = null;
+                addLog('🔄 Игра перезапущена!', 'info');
+                updateUI();
+                localStorage.removeItem('rpg_save');
+                try {
+                    tg.sendData(JSON.stringify({ action: 'reset' }));
+                } catch(e) {}
+            }
+        }
+
+        // ---- Инициализация ----
+        loadGame();
+        updateUI();
+        addLog(`👋 Привет, ${player.name}! Добро пожаловать в игру.`, 'info');
+
+        // ---- Обработчики ----
+        document.getElementById('btnFight').addEventListener('click', fight);
+        document.getElementById('btnHeal').addEventListener('click', heal);
+        document.getElementById('btnFlee').addEventListener('click', flee);
+        document.getElementById('btnStatus').addEventListener('click', showStatus);
+        document.getElementById('btnReset').addEventListener('click', resetGame);
+
+        window.addEventListener('beforeunload', () => saveGame());
+
+        console.log('RPG загружена!');
     </script>
 </body>
 </html>
