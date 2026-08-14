@@ -836,11 +836,14 @@
             return { magicCritMultBonus, magicDodgeBonus };
         }
 
-        function getPhysicalBonuses(strength, agility, constitution, luck) {
+                function getPhysicalBonuses(strength, agility, constitution, luck) {
             const physAttack = 5 + Math.floor(strength * 0.5);
             const physCritChance = 5 + agility * 0.3 + luck * 0.2;
             const physCritMult = 150 + luck * 1;
-            const maxHp = 20 + constitution * 3;
+            // Основной бонус здоровья от телосложения: 3 за очко
+            let maxHp = 20 + constitution * 3;
+            // Дополнительный бонус: +4 HP за каждые 2 очка телосложения
+            maxHp += Math.floor(constitution / 2) * 4;
             const physDefense = 2 + Math.floor(constitution * 0.5);
             const physDodge = 5 + agility * 0.5;
             return {
@@ -1114,8 +1117,28 @@
             document.getElementById('statsModal').classList.remove('active');
             document.body.style.overflow = '';
         }
-
-        function renderBigHexagram() {
+        
+                // Обновляет значения и состояние кнопок в звёзде без пересоздания DOM
+        function updateStatNodes() {
+            const nodes = document.querySelectorAll('#hexagramBig .stat-node-big');
+            nodes.forEach(node => {
+                const statKey = node.querySelector('.stat-plus').dataset.stat;
+                const val = player[statKey];
+                const maxed = val >= 100;
+                const canUp = player.statPoints > 0 && !maxed;
+                node.querySelector('.stat-val').textContent = val;
+                const btn = node.querySelector('.stat-plus');
+                btn.disabled = !canUp;
+                if (canUp) {
+                    btn.style.background = '#2ecc71';
+                } else {
+                    btn.style.background = '#555';
+                }
+            });
+            document.getElementById('statPointsBig').textContent = player.statPoints;
+        }
+        
+                function renderBigHexagram() {
             const container = document.getElementById('hexagramBig');
             const stats = [
                 { key:'intelligence', label:'Интеллект', color:'#8e44ad' },
@@ -1158,6 +1181,7 @@
                 node.style.top = y + '%';
                 node.style.borderColor = s.color;
                 node.style.background = 'rgba(0,0,0,0.85)';
+
                 node.innerHTML = `
                     <span class="stat-label" style="color:${s.color};">${s.label}</span>
                     <span class="stat-val">${val}</span>
@@ -1166,10 +1190,13 @@
                 container.appendChild(node);
             });
 
+            // ---- НОВЫЙ ОБРАБОТЧИК С ЗАЖАТИЕМ ----
             document.querySelectorAll('#hexagramBig .stat-plus').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const statKey = this.dataset.stat;
+                let intervalId = null;
+                let isHeld = false;
+
+                               function increaseStat() {
+                    const statKey = btn.dataset.stat;
                     if (player.statPoints > 0 && player[statKey] < 100) {
                         player[statKey]++;
                         player.statPoints--;
@@ -1177,9 +1204,98 @@
                         saveGame();
                         updateMainUI();
                         updateCharWindow();
-                        renderBigHexagram();
-                        document.getElementById('statPointsBig').textContent = player.statPoints;
+                        updateStatNodes(); // ← вот это вместо renderBigHexagram
                         addLog(`⬆ ${statKey} увеличена до ${player[statKey]}`, 'info');
+                    }
+                }
+                        
+                        // Перерисовываем полностью (это сбросит текущие обработчики, но они будут назначены заново)
+                        // Чтобы не потерять зажатие, лучше перерисовать только значения.
+                        // В целях простоты я пересоздам всю звезду заново, но остановлю удержание.
+                        // Мы можем просто обновить текст и кнопки без пересоздания всей структуры.
+                        // Но так как мы уже внутри обработчика, который был привязан к старой кнопке, после перерисовки эта кнопка исчезнет.
+                        // Поэтому я предлагаю обновлять только текст и disabled состояние без полной перерисовки.
+                        // Сделаем так: обновляем текущий узел и все остальные, не пересоздавая всю звезду.
+                        // Но для простоты я оставлю вызов renderBigHexagram, но перед этим остановим интервал.
+                        // Чтобы избежать проблем, мы переопределим обработчики заново после перерисовки.
+                        // Это сработает, но если держать кнопку, то после первого повышения она отпустится.
+                        // Для комфортного зажатия лучше обновлять только цифры и состояние кнопок.
+                        // Я применю другой подход: не буду перерисовывать всю звезду, а только обновлю значения и disabled.
+                        // Так мы сохраним привязку обработчиков.
+                        // Поэтому я переписал функцию так, чтобы она не вызывала renderBigHexagram полностью.
+                        // Вместо этого я обновляю значения в существующих узлах.
+                        // Для этого я сохраню ссылки на узлы.
+                        // Проще: я перепишу renderBigHexagram так, чтобы она не удаляла и не создавала заново кнопки, а обновляла их содержимое.
+                        // Это потребует значительных изменений, поэтому я применю костыль: при каждом клике (зажатии) мы будем обновлять только цифры.
+                        // Для этого после изменения stat мы вызовем функцию updateStatNodes(), которая обновит все цифры и состояния кнопок без перерисовки.
+                        // Ниже я добавлю такую функцию.
+                    }
+                }
+
+                // Обработчики мыши
+                btn.addEventListener('mousedown', function(e) {
+                    if (this.disabled) return;
+                    isHeld = true;
+                    // Сразу выполняем одно повышение
+                    increaseStat();
+                    // Запускаем интервал
+                    intervalId = setInterval(() => {
+                        if (!isHeld) {
+                            clearInterval(intervalId);
+                            intervalId = null;
+                            return;
+                        }
+                        increaseStat();
+                    }, 150);
+                });
+
+                btn.addEventListener('mouseup', function(e) {
+                    isHeld = false;
+                    if (intervalId) {
+                        clearInterval(intervalId);
+                        intervalId = null;
+                    }
+                });
+
+                btn.addEventListener('mouseleave', function(e) {
+                    isHeld = false;
+                    if (intervalId) {
+                        clearInterval(intervalId);
+                        intervalId = null;
+                    }
+                });
+
+                // Для мобильных устройств (touch)
+                btn.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    if (this.disabled) return;
+                    isHeld = true;
+                    increaseStat();
+                    intervalId = setInterval(() => {
+                        if (!isHeld) {
+                            clearInterval(intervalId);
+                            intervalId = null;
+                            return;
+                        }
+                        increaseStat();
+                    }, 150);
+                });
+
+                btn.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    isHeld = false;
+                    if (intervalId) {
+                        clearInterval(intervalId);
+                        intervalId = null;
+                    }
+                });
+
+                btn.addEventListener('touchcancel', function(e) {
+                    e.preventDefault();
+                    isHeld = false;
+                    if (intervalId) {
+                        clearInterval(intervalId);
+                        intervalId = null;
                     }
                 });
             });
